@@ -6,122 +6,246 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>2353</width>
-    <height>1011</height>
+    <width>1600</width>
+    <height>900</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>FINVIZ TERMINAL</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QVBoxLayout" name="verticalLayout">
+   <layout class="QVBoxLayout" name="mainLayout">
+    <property name="spacing">
+     <number>0</number>
+    </property>
+    <property name="leftMargin">
+     <number>0</number>
+    </property>
+    <property name="topMargin">
+     <number>0</number>
+    </property>
+    <property name="rightMargin">
+     <number>0</number>
+    </property>
+    <property name="bottomMargin">
+     <number>0</number>
+    </property>
+    <item>
+     <widget class="QWidget" name="headerBar" native="true">
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>48</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>48</height>
+       </size>
+      </property>
+      <layout class="QHBoxLayout" name="headerLayout">
+       <property name="leftMargin">
+        <number>16</number>
+       </property>
+       <property name="rightMargin">
+        <number>16</number>
+       </property>
+       <item>
+        <widget class="QLabel" name="appTitle">
+         <property name="text">
+          <string>◆ FINVIZ TERMINAL</string>
+         </property>
+         <property name="styleSheet">
+          <string>font-size: 15px; font-weight: bold; color: #2962FF; letter-spacing: 2px;</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="headerSpacer1">
+         <property name="orientation">
+          <enum>Qt::Orientation::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="searchBar">
+         <property name="minimumSize">
+          <size>
+           <width>350</width>
+           <height>32</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>500</width>
+           <height>32</height>
+          </size>
+         </property>
+         <property name="placeholderText">
+          <string>Search by ticker or company name...</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="headerSpacer2">
+         <property name="orientation">
+          <enum>Qt::Orientation::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QLabel" name="stockCountLabel">
+         <property name="text">
+          <string>0 stocks loaded</string>
+         </property>
+         <property name="styleSheet">
+          <string>color: #787B86; font-size: 12px;</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
     <item>
      <widget class="QSplitter" name="splitter">
       <property name="orientation">
        <enum>Qt::Orientation::Horizontal</enum>
       </property>
+      <property name="childrenCollapsible">
+       <bool>false</bool>
+      </property>
       <widget class="QWidget" name="filtersPanel" native="true">
-       <layout class="QVBoxLayout" name="verticalLayout_2">
+       <property name="minimumSize">
+        <size>
+         <width>220</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>320</width>
+         <height>16777215</height>
+        </size>
+       </property>
+       <layout class="QVBoxLayout" name="filtersPanelLayout">
+        <property name="spacing">
+         <number>12</number>
+        </property>
+        <property name="leftMargin">
+         <number>12</number>
+        </property>
+        <property name="topMargin">
+         <number>12</number>
+        </property>
+        <property name="rightMargin">
+         <number>12</number>
+        </property>
+        <property name="bottomMargin">
+         <number>12</number>
+        </property>
         <item>
-         <widget class="QGroupBox" name="groupBox">
-          <property name="title">
-           <string>Filters / Watchlist</string>
-          </property>
-          <layout class="QFormLayout" name="formLayout">
-           <item row="0" column="0">
-            <widget class="QDateEdit" name="DateFrom"/>
-           </item>
-           <item row="1" column="1">
-            <widget class="QLineEdit" name="TextSearch"/>
-           </item>
-           <item row="2" column="1">
-            <widget class="QDoubleSpinBox" name="MinPrice"/>
-           </item>
-           <item row="3" column="1">
-            <widget class="QDoubleSpinBox" name="MaxPrice"/>
-           </item>
-           <item row="4" column="1">
-            <widget class="QComboBox" name="AssetType"/>
-           </item>
-           <item row="5" column="1">
-            <widget class="QDateEdit" name="DateTo"/>
-           </item>
-           <item row="6" column="1">
-            <widget class="QWidget" name="widget" native="true">
-             <layout class="QHBoxLayout" name="horizontalLayout">
-              <item>
-               <widget class="QPushButton" name="Apply">
-                <property name="text">
-                 <string>Apply</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QPushButton" name="Reset">
-                <property name="text">
-                 <string>Reset Filters</string>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </widget>
-           </item>
-          </layout>
-         </widget>
-        </item>
-       </layout>
-      </widget>
-      <widget class="QWidget" name="tablePanel" native="true">
-       <layout class="QVBoxLayout" name="verticalLayout_3">
-        <item>
-         <widget class="QTableView" name="tableView"/>
-        </item>
-       </layout>
-      </widget>
-      <widget class="QWidget" name="detailsPanel" native="true">
-       <layout class="QVBoxLayout" name="verticalLayout_4">
-        <item>
-         <widget class="QLabel" name="label">
+         <widget class="QLabel" name="screenerTitle">
           <property name="text">
-           <string>Details / Chart</string>
+           <string>SCREENER</string>
+          </property>
+          <property name="styleSheet">
+           <string>font-size: 11px; font-weight: bold; color: #787B86; letter-spacing: 2px; padding-bottom: 4px; border-bottom: 1px solid #2A2E39;</string>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QWidget" name="widget_2" native="true">
-          <layout class="QVBoxLayout" name="verticalLayout_5">
+         <widget class="QLabel" name="sectorLabel">
+          <property name="text">
+           <string>Sector</string>
+          </property>
+          <property name="styleSheet">
+           <string>font-size: 11px; color: #787B86;</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QComboBox" name="sectorCombo">
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>30</height>
+           </size>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="priceLabel">
+          <property name="text">
+           <string>Price Range ($)</string>
+          </property>
+          <property name="styleSheet">
+           <string>font-size: 11px; color: #787B86;</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QWidget" name="priceRangeWidget" native="true">
+          <layout class="QHBoxLayout" name="priceRangeLayout">
+           <property name="leftMargin">
+            <number>0</number>
+           </property>
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="rightMargin">
+            <number>0</number>
+           </property>
+           <property name="bottomMargin">
+            <number>0</number>
+           </property>
            <item>
-            <widget class="QLabel" name="label_2">
-             <property name="text">
-              <string>Sector </string>
+            <widget class="QDoubleSpinBox" name="minPriceSpin">
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>30</height>
+              </size>
+             </property>
+             <property name="prefix">
+              <string>Min </string>
+             </property>
+             <property name="maximum">
+              <double>999999.000000000000000</double>
+             </property>
+             <property name="singleStep">
+              <double>1.000000000000000</double>
              </property>
             </widget>
            </item>
            <item>
-            <widget class="QLabel" name="label_4">
-             <property name="text">
-              <string>Ticker</string>
+            <widget class="QDoubleSpinBox" name="maxPriceSpin">
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>30</height>
+              </size>
              </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="label_3">
-             <property name="text">
-              <string>Price</string>
+             <property name="prefix">
+              <string>Max </string>
              </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="label_5">
-             <property name="text">
-              <string>Volume</string>
+             <property name="maximum">
+              <double>999999.000000000000000</double>
              </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="label_6">
-             <property name="text">
-              <string>Date</string>
+             <property name="singleStep">
+              <double>1.000000000000000</double>
              </property>
             </widget>
            </item>
@@ -129,10 +253,77 @@
          </widget>
         </item>
         <item>
-         <widget class="QPlainTextEdit" name="plainTextEdit"/>
+         <widget class="QWidget" name="filterButtonsWidget" native="true">
+          <layout class="QHBoxLayout" name="filterButtonsLayout">
+           <property name="leftMargin">
+            <number>0</number>
+           </property>
+           <property name="topMargin">
+            <number>4</number>
+           </property>
+           <property name="rightMargin">
+            <number>0</number>
+           </property>
+           <property name="bottomMargin">
+            <number>0</number>
+           </property>
+           <item>
+            <widget class="QPushButton" name="applyBtn">
+             <property name="text">
+              <string>Apply</string>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>32</height>
+              </size>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="resetBtn">
+             <property name="text">
+              <string>Reset</string>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>32</height>
+              </size>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
         </item>
         <item>
-         <spacer name="verticalSpacer">
+         <widget class="QLabel" name="filterSeparator">
+          <property name="styleSheet">
+           <string>border-bottom: 1px solid #2A2E39; padding: 0;</string>
+          </property>
+          <property name="text">
+           <string/>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>1</height>
+           </size>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="filterStatusLabel">
+          <property name="text">
+           <string>Showing all stocks</string>
+          </property>
+          <property name="styleSheet">
+           <string>font-size: 11px; color: #787B86;</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="filtersSpacer">
           <property name="orientation">
            <enum>Qt::Orientation::Vertical</enum>
           </property>
@@ -144,10 +335,358 @@
           </property>
          </spacer>
         </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tablePanel" native="true">
+       <layout class="QVBoxLayout" name="tablePanelLayout">
+        <property name="spacing">
+         <number>0</number>
+        </property>
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
         <item>
-         <widget class="QPushButton" name="pushButton">
+         <widget class="QTableView" name="tableView">
+          <property name="alternatingRowColors">
+           <bool>true</bool>
+          </property>
+          <property name="showGrid">
+           <bool>true</bool>
+          </property>
+          <property name="sortingEnabled">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="detailsPanel" native="true">
+       <property name="minimumSize">
+        <size>
+         <width>280</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>400</width>
+         <height>16777215</height>
+        </size>
+       </property>
+       <layout class="QVBoxLayout" name="detailsPanelLayout">
+        <property name="spacing">
+         <number>8</number>
+        </property>
+        <property name="leftMargin">
+         <number>16</number>
+        </property>
+        <property name="topMargin">
+         <number>16</number>
+        </property>
+        <property name="rightMargin">
+         <number>16</number>
+        </property>
+        <property name="bottomMargin">
+         <number>16</number>
+        </property>
+        <item>
+         <widget class="QLabel" name="detailTitle">
           <property name="text">
-           <string>Show chart</string>
+           <string>STOCK DETAILS</string>
+          </property>
+          <property name="styleSheet">
+           <string>font-size: 11px; font-weight: bold; color: #787B86; letter-spacing: 2px; padding-bottom: 4px; border-bottom: 1px solid #2A2E39;</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="tickerLabel">
+          <property name="text">
+           <string>—</string>
+          </property>
+          <property name="styleSheet">
+           <string>font-size: 28px; font-weight: bold; color: #2962FF; font-family: Consolas;</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="companyLabel">
+          <property name="text">
+           <string>Select a stock</string>
+          </property>
+          <property name="wordWrap">
+           <bool>true</bool>
+          </property>
+          <property name="styleSheet">
+           <string>font-size: 13px; color: #787B86;</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="priceLabel_detail">
+          <property name="text">
+           <string>—</string>
+          </property>
+          <property name="styleSheet">
+           <string>font-size: 24px; font-weight: bold; color: #D1D4DC; font-family: Consolas;</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QWidget" name="changeRow" native="true">
+          <layout class="QHBoxLayout" name="changeRowLayout">
+           <property name="leftMargin">
+            <number>0</number>
+           </property>
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="rightMargin">
+            <number>0</number>
+           </property>
+           <property name="bottomMargin">
+            <number>0</number>
+           </property>
+           <item>
+            <widget class="QLabel" name="netChangeLabel">
+             <property name="text">
+              <string>—</string>
+             </property>
+             <property name="styleSheet">
+              <string>font-size: 14px; font-weight: bold; font-family: Consolas;</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="pctChangeLabel">
+             <property name="text">
+              <string>—</string>
+             </property>
+             <property name="styleSheet">
+              <string>font-size: 14px; font-weight: bold; font-family: Consolas;</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer name="changeRowSpacer">
+             <property name="orientation">
+              <enum>Qt::Orientation::Horizontal</enum>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="detailSep1">
+          <property name="styleSheet">
+           <string>border-bottom: 1px solid #2A2E39; padding: 0;</string>
+          </property>
+          <property name="text">
+           <string/>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>1</height>
+           </size>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QWidget" name="metricsGrid" native="true">
+          <layout class="QFormLayout" name="metricsLayout">
+           <property name="horizontalSpacing">
+            <number>16</number>
+           </property>
+           <property name="verticalSpacing">
+            <number>10</number>
+           </property>
+           <item row="0" column="0">
+            <widget class="QLabel" name="volLabelTitle">
+             <property name="text">
+              <string>Volume</string>
+             </property>
+             <property name="styleSheet">
+              <string>font-size: 11px; color: #787B86;</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QLabel" name="volumeValue">
+             <property name="text">
+              <string>—</string>
+             </property>
+             <property name="styleSheet">
+              <string>font-size: 12px; color: #D1D4DC; font-family: Consolas;</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="mcapLabelTitle">
+             <property name="text">
+              <string>Market Cap</string>
+             </property>
+             <property name="styleSheet">
+              <string>font-size: 11px; color: #787B86;</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QLabel" name="marketCapValue">
+             <property name="text">
+              <string>—</string>
+             </property>
+             <property name="styleSheet">
+              <string>font-size: 12px; color: #D1D4DC; font-family: Consolas;</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="sectorLabelTitle">
+             <property name="text">
+              <string>Sector</string>
+             </property>
+             <property name="styleSheet">
+              <string>font-size: 11px; color: #787B86;</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QLabel" name="sectorValue">
+             <property name="text">
+              <string>—</string>
+             </property>
+             <property name="styleSheet">
+              <string>font-size: 12px; color: #D1D4DC;</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="0">
+            <widget class="QLabel" name="industryLabelTitle">
+             <property name="text">
+              <string>Industry</string>
+             </property>
+             <property name="styleSheet">
+              <string>font-size: 11px; color: #787B86;</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="1">
+            <widget class="QLabel" name="industryValue">
+             <property name="text">
+              <string>—</string>
+             </property>
+             <property name="styleSheet">
+              <string>font-size: 12px; color: #D1D4DC;</string>
+             </property>
+             <property name="wordWrap">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="0">
+            <widget class="QLabel" name="countryLabelTitle">
+             <property name="text">
+              <string>Country</string>
+             </property>
+             <property name="styleSheet">
+              <string>font-size: 11px; color: #787B86;</string>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="1">
+            <widget class="QLabel" name="countryValue">
+             <property name="text">
+              <string>—</string>
+             </property>
+             <property name="styleSheet">
+              <string>font-size: 12px; color: #D1D4DC;</string>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="0">
+            <widget class="QLabel" name="ipoLabelTitle">
+             <property name="text">
+              <string>IPO Year</string>
+             </property>
+             <property name="styleSheet">
+              <string>font-size: 11px; color: #787B86;</string>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="1">
+            <widget class="QLabel" name="ipoValue">
+             <property name="text">
+              <string>—</string>
+             </property>
+             <property name="styleSheet">
+              <string>font-size: 12px; color: #D1D4DC; font-family: Consolas;</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="detailSep2">
+          <property name="styleSheet">
+           <string>border-bottom: 1px solid #2A2E39; padding: 0;</string>
+          </property>
+          <property name="text">
+           <string/>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>1</height>
+           </size>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QWidget" name="chartContainer" native="true">
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>200</height>
+           </size>
+          </property>
+          <layout class="QVBoxLayout" name="chartContainerLayout">
+           <property name="leftMargin">
+            <number>0</number>
+           </property>
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="rightMargin">
+            <number>0</number>
+           </property>
+           <property name="bottomMargin">
+            <number>0</number>
+           </property>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="showChartBtn">
+          <property name="text">
+           <string>Show Sector Chart</string>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>32</height>
+           </size>
           </property>
          </widget>
         </item>
@@ -162,11 +701,11 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>2353</width>
+     <width>1600</width>
      <height>21</height>
     </rect>
    </property>
-   <widget class="QMenu" name="menuFinancial_Analyzer">
+   <widget class="QMenu" name="menuFile">
     <property name="title">
      <string>File</string>
     </property>
@@ -189,28 +728,12 @@
      <string>Help</string>
     </property>
    </widget>
-   <addaction name="menuFinancial_Analyzer"/>
+   <addaction name="menuFile"/>
    <addaction name="menuView"/>
    <addaction name="menuTools"/>
    <addaction name="menuHelp"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
-  <widget class="QToolBar" name="toolBar">
-   <property name="windowTitle">
-    <string>toolBar</string>
-   </property>
-   <attribute name="toolBarArea">
-    <enum>TopToolBarArea</enum>
-   </attribute>
-   <attribute name="toolBarBreak">
-    <bool>false</bool>
-   </attribute>
-  </widget>
-  <action name="actionTools">
-   <property name="text">
-    <string>Tools</string>
-   </property>
-  </action>
   <action name="actionNew">
    <property name="text">
     <string>New</string>

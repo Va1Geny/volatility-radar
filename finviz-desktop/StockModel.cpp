@@ -4,10 +4,11 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonArray>
+#include <QLocale>
 
 const QStringList StockModel::HEADERS = {
 	"Symbol", "Name", "Last Sale", "Volume",
-	"Net Change", "% Change", "Sector", "Industry"
+	"Net Change", "% Change", "Market Cap", "Sector", "Industry"
 };
 
 
@@ -20,6 +21,19 @@ const StockRecord & StockModel::recordAt(int row) const
 	return m_data.at(row);
 }
 
+QStringList StockModel::uniqueSectors() const
+{
+	QStringList list(m_sectors.begin(), m_sectors.end());
+	list.sort();
+	return list;
+}
+
+QStringList StockModel::uniqueCountries() const
+{
+	QStringList list(m_countries.begin(), m_countries.end());
+	list.sort();
+	return list;
+}
 
 void StockModel::loadFromCsv(const QString & path)
 {
@@ -31,6 +45,8 @@ void StockModel::loadFromCsv(const QString & path)
 
 	beginResetModel();
 	m_data.clear();
+	m_sectors.clear();
+	m_countries.clear();
 
 	QByteArray trimmed = rawData.trimmed();
 	if (trimmed.startsWith('{'))
@@ -62,6 +78,7 @@ void StockModel::loadFromCsv(const QString & path)
 			QString pctStr = obj["pctchange"].toString().trimmed();
 			pctStr.remove('%');
 			r.pctChange = pctStr.toDouble();
+			r.marketCap = obj["marketCap"].toString().trimmed().toDouble();
 			r.country  = obj["country"].toString().trimmed();
 			r.ipoyear  = obj["ipoyear"].toString().trimmed();
 			r.industry = obj["industry"].toString().trimmed();
@@ -70,6 +87,8 @@ void StockModel::loadFromCsv(const QString & path)
 			if (!r.symbol.isEmpty())
 			{
 				m_data.append(r);
+				if (!r.sector.isEmpty()) m_sectors.insert(r.sector);
+				if (!r.country.isEmpty()) m_countries.insert(r.country);
 			}
 		}
 	}
@@ -103,6 +122,8 @@ void StockModel::loadFromCsv(const QString & path)
 			if (!r.symbol.isEmpty())
 			{
 				m_data.append(r);
+				if (!r.sector.isEmpty()) m_sectors.insert(r.sector);
+				if (!r.country.isEmpty()) m_countries.insert(r.country);
 			}
 		}
 	}
@@ -122,23 +143,70 @@ int StockModel::columnCount(const QModelIndex &) const
 
 QVariant StockModel::data(const QModelIndex & index, int role) const
 {
-	if (!index.isValid() || role != Qt::DisplayRole)
+	if (!index.isValid())
 	{
 		return {};
 	}
 
-	const StockRecord & record = m_data[index.row()];
+	const StockRecord & r = m_data[index.row()];
+
+	if (role == Qt::UserRole)
+	{
+		switch (index.column())
+		{
+			case ColLastSale:  return r.lastSale;
+			case ColVolume:    return r.volume;
+			case ColNetChange: return r.netChange;
+			case ColPctChange: return r.pctChange;
+			case ColMarketCap: return r.marketCap;
+			default: return {};
+		}
+	}
+
+	if (role == Qt::TextAlignmentRole)
+	{
+		switch (index.column())
+		{
+			case ColLastSale:
+			case ColVolume:
+			case ColNetChange:
+			case ColPctChange:
+			case ColMarketCap:
+				return QVariant(Qt::AlignRight | Qt::AlignVCenter);
+			default:
+				return QVariant(Qt::AlignLeft | Qt::AlignVCenter);
+		}
+	}
+
+	if (role != Qt::DisplayRole)
+	{
+		return {};
+	}
+
+	QLocale locale(QLocale::English, QLocale::UnitedStates);
 
 	switch (index.column())
 	{
-		case 0: return record.symbol;
-		case 1: return record.name;
-		case 2: return QString("$%1").arg(record.lastSale, 0, 'f', 2);
-		case 3: return QString::number((long long) record.volume);
-		case 4: return QString::number(record.netChange, 'f', 2);
-		case 5: return QString("%1%").arg(record.pctChange, 0, 'f', 2);
-		case 6: return record.sector;
-		case 7: return record.industry;
+		case ColSymbol:    return r.symbol;
+		case ColName:      return r.name;
+		case ColLastSale:  return QString("$%1").arg(r.lastSale, 0, 'f', 2);
+		case ColVolume:    return locale.toString((qlonglong)r.volume);
+		case ColNetChange: return QString::number(r.netChange, 'f', 2);
+		case ColPctChange: return QString("%1%").arg(r.pctChange, 0, 'f', 2);
+		case ColMarketCap:
+		{
+			if (r.marketCap >= 1e12)
+				return QString("$%1T").arg(r.marketCap / 1e12, 0, 'f', 2);
+			if (r.marketCap >= 1e9)
+				return QString("$%1B").arg(r.marketCap / 1e9, 0, 'f', 2);
+			if (r.marketCap >= 1e6)
+				return QString("$%1M").arg(r.marketCap / 1e6, 0, 'f', 2);
+			if (r.marketCap > 0)
+				return QString("$%1K").arg(r.marketCap / 1e3, 0, 'f', 0);
+			return QString("-");
+		}
+		case ColSector:    return r.sector;
+		case ColIndustry:  return r.industry;
 		default: return {};
 	}
 }

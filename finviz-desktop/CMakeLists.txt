@@ -22,6 +22,10 @@ qt_add_executable(finviz-desktop
     mainwindow.ui
     StockModel.cpp
     StockModel.h
+    StockDelegate.cpp
+    StockDelegate.h
+    StockFilterProxy.cpp
+    StockFilterProxy.h
 )
 
 target_link_libraries(finviz-desktop
@@ -29,6 +33,15 @@ target_link_libraries(finviz-desktop
         Qt6::Core
         Qt6::Widgets
         Qt6::Charts
+)
+
+add_custom_command(TARGET finviz-desktop POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_CURRENT_SOURCE_DIR}/stocks.csv"
+        "$<TARGET_FILE_DIR:finviz-desktop>/stocks.csv"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_CURRENT_SOURCE_DIR}/style.qss"
+        "$<TARGET_FILE_DIR:finviz-desktop>/style.qss"
 )
 
 install(TARGETS finviz-desktop

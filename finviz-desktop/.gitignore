@@ -82,3 +82,21 @@ CMakeLists.txt.user*
 .uic/
 /build*/
 /.qtcreator/
+
+# Secrets — never commit the API token
+finnhub.token
+*.token
+.env
+
+# Python analyzer
+__pycache__/
+.venv/
+analyzer/cache/
+analyzer/artifacts/
+*.log
+*.log.err
+
+# IDE
+.vs/
+CMakeSettings.json
+out/

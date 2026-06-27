@@ -3,6 +3,7 @@
 #include <QString>
 #include <QVector>
 #include <QSet>
+#include <QHash>
 
 struct StockRecord
 {
@@ -13,6 +14,7 @@ struct StockRecord
 	double netChange = 0.0;
 	double pctChange = 0.0;
 	double marketCap = 0.0;
+	double previousClose = 0.0;
 	QString sector;
 	QString industry;
 	QString country;
@@ -40,6 +42,9 @@ public:
 
 	void loadFromCsv(const QString & path);
 
+	void clearAll();
+	void addRecord(const StockRecord & record);
+
 	int rowCount(const QModelIndex & parent = {}) const override;
 
 	int columnCount(const QModelIndex & parent = {}) const override;
@@ -54,9 +59,15 @@ public:
 
 	QStringList uniqueCountries() const;
 
+	QStringList allSymbols() const;
+
+public slots:
+	void updateLivePrice(const QString & symbol, double price, double volume);
+
 private:
 	QVector<StockRecord> m_data;
 	QSet<QString> m_sectors;
 	QSet<QString> m_countries;
+	QHash<QString, int> m_symbolToRow;
 	static const QStringList HEADERS;
 };

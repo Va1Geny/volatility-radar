@@ -1,0 +1,167 @@
+==============================================================================
+ FINVIZ DESKTOP - BIG MOVE MODEL - MANUAL
+==============================================================================
+
+WHAT THIS MODEL DOES
+------------------------------------------------------------------------------
+It is a CNN that predicts whether a stock will make an UNUSUALLY LARGE move
+(up OR down) in the next 5 trading days. It does NOT predict direction
+(up vs down) - that is near-impossible on liquid stocks (coin flip).
+
+Output per stock = a probability 0..1 = P(big move soon).
+  >= 0.5  -> "BIG MOVE"   (volatility likely)
+  <  0.5  -> "calm"
+
+Why this works: volatility clusters. Big moves follow big moves, calm follows
+calm. That pattern is real and learnable. Validation AUC ~0.63 (real signal,
+not magic). Use it to RANK which stocks are about to get active, not as a
+guaranteed buy/sell signal.
+
+
+==============================================================================
+ FOLDER LAYOUT
+==============================================================================
+analyzer/
+  predictor/
+    config.py       <- ALL settings live here. Edit this, not the others.
+    data_loader.py  downloads prices (yfinance) and caches them
+    features.py     builds the indicators + the training label
+    dataset.py      turns features into training windows, scales them
+    model.py        the CNN (and an alternative CNN+LSTM)
+    train.py        runs training, saves the model
+    predict.py      scores tickers with the trained model
+    serve.py        optional: streams predictions over a websocket
+  artifacts/        saved model (bigmove_cnn.keras) + scaler.json   [auto-made]
+  cache/            cached price data (parquet)                     [auto-made]
+  requirements.txt  python packages needed
+
+
+==============================================================================
+ ONE-TIME SETUP
+==============================================================================
+1. Open PowerShell in the analyzer/ folder.
+2. Activate the virtual environment:
+       .\.venv\Scripts\Activate.ps1
+   (If .venv does not exist, create it:
+       python -m venv .venv
+       .\.venv\Scripts\Activate.ps1   )
+3. Install packages:
+       pip install -r requirements.txt
+
+
+==============================================================================
+ HOW TO TRAIN THE MODEL
+==============================================================================
+From the analyzer/ folder, with the venv active:
+
+   python -m predictor.train
+
+Useful flags:
+   --refresh            re-download fresh price data (ignore cache)
+   --epochs 80          train for a set number of epochs
+   --no-early-stop      run ALL epochs, never stop early
+   --tickers AAPL MSFT  train only on the tickers you list
+
+Examples:
+   python -m predictor.train --refresh
+   python -m predictor.train --epochs 100 --no-early-stop
+
+What happens:
+   - downloads/loads ~40 stocks of price history
+   - builds training windows
+   - trains the CNN, printing one line per epoch
+   - automatically saves the BEST epoch to artifacts/bigmove_cnn.keras
+
+Read the printed numbers:
+   auc        higher = better at ranking big moves (0.5 = useless, 0.6+ = useful)
+   recall     how many real big moves it catches
+   precision  how often a "BIG MOVE" flag is correct
+   loss       lower = better; if VAL loss rises while TRAIN loss falls = overfit
+
+
+==============================================================================
+ HOW TO GET PREDICTIONS
+==============================================================================
+   python -m predictor.predict AAPL NVDA TSLA
+
+Prints one line per ticker, e.g.:
+   {'ticker': 'TSLA', 'prob_bigmove': 0.57, 'label': 'BIG MOVE'}
+
+No tickers given = scores the whole default list from config.py.
+
+
+==============================================================================
+ HOW TO MODIFY THE MODEL  (everything in predictor/config.py)
+==============================================================================
+Open predictor/config.py. The important knobs:
+
+  tickers        which stocks to train on. Add/remove symbols freely.
+  task           "bigmove" (volatility) or "direction" (up/down, weak).
+  move_mult      how big a move counts as "big". 1.5 = 1.5x normal move.
+                 Lower it (e.g. 1.2) = more "big move" labels, easier task.
+                 Raise it (e.g. 2.0) = only flag extreme moves.
+  period         how much history to download ("5y", "10y", "max").
+  window         how many past days the model looks at (40 = ~2 months).
+  horizon        how many days ahead it predicts (5 = one week).
+
+  arch           "cnn"  (default, fast) or "cnnlstm" (CNN + LSTM, slower).
+  conv_filters   width of the CNN. Bigger = more capacity (and more overfit).
+  dropout        0..1. Higher = stronger anti-overfit. Try 0.3 - 0.5.
+  l2             weight penalty. Higher = simpler model, less overfit.
+
+  epochs         max training passes.
+  batch_size     samples per step. 128 is fine. Lower if you run out of RAM.
+  learning_rate  step size. 1e-3 default.
+
+  lr_factor/lr_patience  the model auto-lowers learning rate when it gets
+                         stuck. Leave as-is unless you know why you're changing.
+  early_patience         stop after this many epochs with no improvement.
+
+AFTER EDITING config.py, just re-run:  python -m predictor.train
+
+
+==============================================================================
+ COMMON CHANGES - RECIPES
+==============================================================================
+* Train on more / different stocks:
+    edit `tickers` (or `UNIVERSE`) in config.py, then `--refresh` once.
+
+* Make the task easier (more signal, less precise):
+    lower `move_mult` to ~1.2, or raise `horizon` to 10.
+
+* Reduce overfitting (train auc >> val auc):
+    raise `dropout` to 0.4-0.5, raise `l2`, or lower `conv_filters`.
+
+* Try the heavier model:
+    set `arch = "cnnlstm"` in config.py, retrain.
+
+* Add a new indicator/feature:
+    1) compute it inside build_features() in features.py
+       (add a column:  out["my_feature"] = ... )
+    2) add its name to `feature_cols` in config.py
+    3) retrain with --refresh
+
+
+==============================================================================
+ TROUBLESHOOTING
+==============================================================================
+* "No model at ..."         -> you haven't trained yet. Run predictor.train.
+* yfinance "skip TICKER"    -> that symbol failed to download; harmless,
+                               or run again (rate-limited). One bad ticker
+                               does not stop the run.
+* Out of memory             -> lower batch_size, fewer tickers, or shorter
+                               `period` in config.py.
+* val auc stuck near 0.50   -> the task has no signal at those settings.
+                               Lower move_mult or raise horizon.
+* TensorFlow GPU warning    -> normal on Windows; it trains on CPU. Fine.
+
+The oneDNN / absl / GPU lines printed at startup are INFO noise, not errors.
+
+
+==============================================================================
+ IMPORTANT - HONEST EXPECTATIONS
+==============================================================================
+This model finds VOLATILITY, not direction. It tells you a stock is likely to
+MOVE, not WHICH WAY. AUC ~0.63 is a real but modest edge. Treat outputs as a
+ranking/alert, never as financial advice. Do not bet money on it.
+==============================================================================

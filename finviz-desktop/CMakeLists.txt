@@ -9,7 +9,7 @@ add_compile_options(
     $<$<CXX_COMPILER_ID:MSVC>:/Zc:__cplusplus>
 )
 
-find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets Charts)
+find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets Charts WebSockets Network)
 
 qt_standard_project_setup()
 
@@ -26,6 +26,10 @@ qt_add_executable(finviz-desktop
     StockDelegate.h
     StockFilterProxy.cpp
     StockFilterProxy.h
+    FinnhubClient.cpp
+    FinnhubClient.h
+    FinnhubRest.cpp
+    FinnhubRest.h
 )
 
 target_link_libraries(finviz-desktop
@@ -33,6 +37,8 @@ target_link_libraries(finviz-desktop
         Qt6::Core
         Qt6::Widgets
         Qt6::Charts
+        Qt6::WebSockets
+        Qt6::Network
 )
 
 add_custom_command(TARGET finviz-desktop POST_BUILD
@@ -43,6 +49,14 @@ add_custom_command(TARGET finviz-desktop POST_BUILD
         "${CMAKE_CURRENT_SOURCE_DIR}/style.qss"
         "$<TARGET_FILE_DIR:finviz-desktop>/style.qss"
 )
+
+# Copy the Finnhub token next to the binary if present (gitignored, optional).
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/finnhub.token")
+    add_custom_command(TARGET finviz-desktop POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CMAKE_CURRENT_SOURCE_DIR}/finnhub.token"
+            "$<TARGET_FILE_DIR:finviz-desktop>/finnhub.token")
+endif()
 
 install(TARGETS finviz-desktop
     BUNDLE DESTINATION .

@@ -35,6 +35,36 @@ QStringList StockModel::uniqueCountries() const
 	return list;
 }
 
+QStringList StockModel::allSymbols() const
+{
+	QStringList list;
+	list.reserve(m_data.size());
+	for (const StockRecord & r : m_data)
+		list << r.symbol;
+	return list;
+}
+
+void StockModel::updateLivePrice(const QString & symbol, double price, double volume)
+{
+	auto it = m_symbolToRow.constFind(symbol);
+	if (it == m_symbolToRow.constEnd()) return;
+
+	const int row = it.value();
+	StockRecord & r = m_data[row];
+
+	r.lastSale = price;
+	if (r.previousClose > 0.0)
+	{
+		r.netChange = price - r.previousClose;
+		r.pctChange = r.netChange / r.previousClose * 100.0;
+	}
+	if (volume > 0.0)
+		r.volume += volume;
+
+	emit dataChanged(index(row, ColLastSale), index(row, ColPctChange),
+		{ Qt::DisplayRole, Qt::UserRole });
+}
+
 void StockModel::loadFromCsv(const QString & path)
 {
 	QFile file(path);
@@ -47,6 +77,7 @@ void StockModel::loadFromCsv(const QString & path)
 	m_data.clear();
 	m_sectors.clear();
 	m_countries.clear();
+	m_symbolToRow.clear();
 
 	QByteArray trimmed = rawData.trimmed();
 	if (trimmed.startsWith('{'))
@@ -83,10 +114,12 @@ void StockModel::loadFromCsv(const QString & path)
 			r.ipoyear  = obj["ipoyear"].toString().trimmed();
 			r.industry = obj["industry"].toString().trimmed();
 			r.sector   = obj["sector"].toString().trimmed();
+			r.previousClose = r.lastSale - r.netChange;
 
 			if (!r.symbol.isEmpty())
 			{
 				m_data.append(r);
+				m_symbolToRow.insert(r.symbol, m_data.size() - 1);
 				if (!r.sector.isEmpty()) m_sectors.insert(r.sector);
 				if (!r.country.isEmpty()) m_countries.insert(r.country);
 			}
@@ -118,10 +151,12 @@ void StockModel::loadFromCsv(const QString & path)
 			r.ipoyear  = fields[8].trimmed().remove('"');
 			r.industry = fields[9].trimmed().remove('"');
 			r.sector   = fields[10].trimmed().remove('"');
+			r.previousClose = r.lastSale - r.netChange;
 
 			if (!r.symbol.isEmpty())
 			{
 				m_data.append(r);
+				m_symbolToRow.insert(r.symbol, m_data.size() - 1);
 				if (!r.sector.isEmpty()) m_sectors.insert(r.sector);
 				if (!r.country.isEmpty()) m_countries.insert(r.country);
 			}
@@ -129,6 +164,38 @@ void StockModel::loadFromCsv(const QString & path)
 	}
 
 	endResetModel();
+}
+
+void StockModel::clearAll()
+{
+	beginResetModel();
+	m_data.clear();
+	m_sectors.clear();
+	m_countries.clear();
+	m_symbolToRow.clear();
+	endResetModel();
+}
+
+void StockModel::addRecord(const StockRecord & record)
+{
+	if (record.symbol.isEmpty()) return;
+
+	auto it = m_symbolToRow.constFind(record.symbol);
+	if (it != m_symbolToRow.constEnd())
+	{
+		const int row = it.value();
+		m_data[row] = record;
+		emit dataChanged(index(row, 0), index(row, ColCount - 1));
+		return;
+	}
+
+	const int row = m_data.size();
+	beginInsertRows(QModelIndex(), row, row);
+	m_data.append(record);
+	m_symbolToRow.insert(record.symbol, row);
+	if (!record.sector.isEmpty()) m_sectors.insert(record.sector);
+	if (!record.country.isEmpty()) m_countries.insert(record.country);
+	endInsertRows();
 }
 
 int StockModel::rowCount(const QModelIndex &) const

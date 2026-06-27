@@ -1,5 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "FinnhubClient.h"
+#include "FinnhubRest.h"
 #include <QBarCategoryAxis>
 #include <QBarSeries>
 #include <QBarSet>
@@ -10,6 +12,7 @@
 #include <QFileInfo>
 #include <QLocale>
 #include <QMap>
+#include <QSet>
 #include <QValueAxis>
 #include <QVBoxLayout>
 
@@ -23,15 +26,17 @@ MainWindow::MainWindow(QWidget * parent)
 	ui->setupUi(this);
 	setupTheme();
 
-	QString csvPath = QCoreApplication::applicationDirPath() + "\\stocks.csv";
+	m_token = resolveToken();
+	m_watchlist = megaCapWatchlist();
 
-	QFileInfo check_file(csvPath);
-	if (!check_file.exists())
+	if (m_token.isEmpty())
 	{
-		qWarning() << "Error: stocks.csv file not found at:" << csvPath;
+		QString csvPath = QCoreApplication::applicationDirPath() + "\\stocks.csv";
+		QFileInfo check_file(csvPath);
+		if (!check_file.exists())
+			qWarning() << "Error: stocks.csv file not found at:" << csvPath;
+		m_model->loadFromCsv(csvPath);
 	}
-
-	m_model->loadFromCsv(csvPath);
 
 	m_proxy->setSourceModel(m_model);
 
@@ -83,6 +88,8 @@ MainWindow::MainWindow(QWidget * parent)
 		this, &MainWindow::onSearchTextChanged);
 
 	createEmbeddedChart();
+
+	setupLiveData();
 
 	statusBar()->showMessage("Ready");
 }
@@ -152,6 +159,89 @@ void MainWindow::createEmbeddedChart()
 	m_chartView->setStyleSheet("background: transparent; border: none;");
 
 	ui->chartContainerLayout->addWidget(m_chartView);
+}
+
+QString MainWindow::resolveToken() const
+{
+	QString token = qEnvironmentVariable("FINNHUB_API_KEY");
+	if (token.isEmpty())
+	{
+		QFile tokenFile(QCoreApplication::applicationDirPath() + "\\finnhub.token");
+		if (tokenFile.open(QIODevice::ReadOnly | QIODevice::Text))
+		{
+			token = QString::fromUtf8(tokenFile.readAll()).trimmed();
+			tokenFile.close();
+		}
+	}
+	return token;
+}
+
+QStringList MainWindow::megaCapWatchlist()
+{
+	return {
+		"AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META", "TSLA", "BRK.B",
+		"JPM", "V", "MA", "WMT", "JNJ", "PG", "HD", "KO", "PEP", "DIS",
+		"NFLX", "AMD", "INTC", "CSCO", "ORCL", "ADBE", "CRM", "NKE", "MCD",
+		"BA", "XOM", "CVX", "PFE", "MRK", "BAC", "VZ", "IBM", "QCOM",
+		"COST", "TSM", "BABA", "TM", "TXN",
+	};
+}
+
+void MainWindow::setupLiveData()
+{
+	m_finnhub = new FinnhubClient(m_token, this);
+
+	if (m_token.isEmpty())
+	{
+		statusBar()->showMessage(
+			"Live data off — set FINNHUB_API_KEY or add finnhub.token next to the app");
+		return;
+	}
+
+	connect(m_finnhub, &FinnhubClient::tradeReceived,
+		m_model, &StockModel::updateLivePrice);
+	connect(m_finnhub, &FinnhubClient::tradeReceived,
+		this, &MainWindow::onTradeReceived);
+	connect(m_finnhub, &FinnhubClient::connected, this, [this]
+	{
+		statusBar()->showMessage("Live — connected to Finnhub");
+	});
+	connect(m_finnhub, &FinnhubClient::errorOccurred, this, [this](const QString & msg)
+	{
+		statusBar()->showMessage("Live error: " + msg);
+	});
+
+	m_finnhub->connectToServer();
+	m_finnhub->subscribe(m_watchlist);
+
+	m_rest = new FinnhubRest(m_token, this);
+	connect(m_rest, &FinnhubRest::recordReady,
+		m_model, &StockModel::addRecord);
+	connect(m_rest, &FinnhubRest::progress, this, [this](int done, int total)
+	{
+		ui->stockCountLabel->setText(
+			QString("Loading %1/%2 stocks...").arg(done).arg(total));
+	});
+	connect(m_rest, &FinnhubRest::finished, this, [this]
+	{
+		populateFilterCombos();
+		ui->stockCountLabel->setText(
+			QString("%1 stocks loaded").arg(m_model->rowCount()));
+		updateFilterStatus();
+	});
+
+	m_model->clearAll();
+	m_rest->loadSymbols(m_watchlist);
+}
+
+void MainWindow::onTradeReceived(const QString & symbol, double, double)
+{
+	QModelIndex current = ui->tableView->currentIndex();
+	if (!current.isValid()) return;
+
+	QModelIndex src = m_proxy->mapToSource(current);
+	if (m_model->recordAt(src.row()).symbol == symbol)
+		onRowSelected(current, QModelIndex());
 }
 
 void MainWindow::onRowSelected(const QModelIndex & current, const QModelIndex &)

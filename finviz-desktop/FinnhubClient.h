@@ -3,6 +3,7 @@
 #include <QWebSocket>
 #include <QStringList>
 #include <QAbstractSocket>
+#include <QTimer>
 
 class FinnhubClient: public QObject
 {
@@ -31,9 +32,12 @@ private slots:
 
 private:
 	void sendSub(const QString & type, const QString & symbol);
+	void scheduleReconnect();
 
 	QWebSocket m_socket;
 	QString m_token;
-	QStringList m_pending;
+	QStringList m_subscribed;
 	bool m_connected = false;
+	QTimer m_reconnectTimer;
+	int m_reconnectMs = 3000;
 };

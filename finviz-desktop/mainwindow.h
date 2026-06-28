@@ -11,6 +11,7 @@ QT_END_NAMESPACE
 
 class FinnhubClient;
 class FinnhubRest;
+class PredictionClient;
 
 class MainWindow: public QMainWindow
 {
@@ -33,6 +34,7 @@ private:
 	void updateFilterStatus();
 	void createEmbeddedChart();
 	void setupLiveData();
+	void setupPredictions();
 	QString resolveToken() const;
 	static QStringList megaCapWatchlist();
 
@@ -43,6 +45,7 @@ private:
 	QChartView * m_chartView = nullptr;
 	FinnhubClient * m_finnhub = nullptr;
 	FinnhubRest * m_rest = nullptr;
+	PredictionClient * m_predictions = nullptr;
 	QString m_token;
 	QStringList m_watchlist;
 };

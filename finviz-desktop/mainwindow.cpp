@@ -2,6 +2,7 @@
 #include "ui_mainwindow.h"
 #include "FinnhubClient.h"
 #include "FinnhubRest.h"
+#include "PredictionClient.h"
 #include <QBarCategoryAxis>
 #include <QBarSeries>
 #include <QBarSet>
@@ -62,6 +63,7 @@ MainWindow::MainWindow(QWidget * parent)
 	ui->tableView->setColumnWidth(StockModel::ColPctChange, 90);
 	ui->tableView->setColumnWidth(StockModel::ColMarketCap, 110);
 	ui->tableView->setColumnWidth(StockModel::ColSector, 140);
+	ui->tableView->setColumnWidth(StockModel::ColBigMove, 90);
 
 	ui->splitter->setSizes({ 240, 800, 320 });
 
@@ -90,6 +92,7 @@ MainWindow::MainWindow(QWidget * parent)
 	createEmbeddedChart();
 
 	setupLiveData();
+	setupPredictions();
 
 	statusBar()->showMessage("Ready");
 }
@@ -232,6 +235,14 @@ void MainWindow::setupLiveData()
 
 	m_model->clearAll();
 	m_rest->loadSymbols(m_watchlist);
+}
+
+void MainWindow::setupPredictions()
+{
+	m_predictions = new PredictionClient("ws://127.0.0.1:8765", this);
+	connect(m_predictions, &PredictionClient::predictionReceived,
+		m_model, &StockModel::setPrediction);
+	m_predictions->start();
 }
 
 void MainWindow::onTradeReceived(const QString & symbol, double, double)

@@ -18,6 +18,12 @@ FinnhubClient::FinnhubClient(const QString & apiToken, QObject * parent)
 		this, &FinnhubClient::onTextMessageReceived);
 	connect(&m_socket, &QWebSocket::errorOccurred,
 		this, &FinnhubClient::onError);
+
+	m_reconnectTimer.setSingleShot(true);
+	connect(&m_reconnectTimer, &QTimer::timeout, this, [this]
+	{
+		connectToServer();
+	});
 }
 
 void FinnhubClient::connectToServer()
@@ -40,10 +46,11 @@ void FinnhubClient::subscribe(const QString & symbol)
 {
 	if (symbol.isEmpty()) return;
 
+	if (!m_subscribed.contains(symbol))
+		m_subscribed << symbol;
+
 	if (m_connected)
 		sendSub("subscribe", symbol);
-	else
-		m_pending << symbol;
 }
 
 void FinnhubClient::subscribe(const QStringList & symbols)
@@ -54,8 +61,16 @@ void FinnhubClient::subscribe(const QStringList & symbols)
 
 void FinnhubClient::unsubscribe(const QString & symbol)
 {
+	m_subscribed.removeAll(symbol);
 	if (m_connected)
 		sendSub("unsubscribe", symbol);
+}
+
+void FinnhubClient::scheduleReconnect()
+{
+	if (m_token.isEmpty()) return;
+	if (!m_reconnectTimer.isActive())
+		m_reconnectTimer.start(m_reconnectMs);
 }
 
 void FinnhubClient::sendSub(const QString & type, const QString & symbol)
@@ -70,9 +85,9 @@ void FinnhubClient::sendSub(const QString & type, const QString & symbol)
 void FinnhubClient::onConnected()
 {
 	m_connected = true;
-	for (const QString & s : m_pending)
+	m_reconnectTimer.stop();
+	for (const QString & s : m_subscribed)
 		sendSub("subscribe", s);
-	m_pending.clear();
 	emit connected();
 }
 
@@ -80,11 +95,13 @@ void FinnhubClient::onDisconnected()
 {
 	m_connected = false;
 	emit disconnected();
+	scheduleReconnect();
 }
 
 void FinnhubClient::onError(QAbstractSocket::SocketError)
 {
 	emit errorOccurred(m_socket.errorString());
+	scheduleReconnect();
 }
 
 void FinnhubClient::onTextMessageReceived(const QString & message)

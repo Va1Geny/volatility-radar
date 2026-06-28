@@ -8,7 +8,7 @@
 
 const QStringList StockModel::HEADERS = {
 	"Symbol", "Name", "Last Sale", "Volume",
-	"Net Change", "% Change", "Market Cap", "Sector", "Industry"
+	"Net Change", "% Change", "Market Cap", "Sector", "Industry", "Volatility"
 };
 
 
@@ -62,6 +62,18 @@ void StockModel::updateLivePrice(const QString & symbol, double price, double vo
 		r.volume += volume;
 
 	emit dataChanged(index(row, ColLastSale), index(row, ColPctChange),
+		{ Qt::DisplayRole, Qt::UserRole });
+}
+
+void StockModel::setPrediction(const QString & symbol, double bigMoveProb)
+{
+	auto it = m_symbolToRow.constFind(symbol);
+	if (it == m_symbolToRow.constEnd()) return;
+
+	const int row = it.value();
+	m_data[row].bigMoveProb = bigMoveProb;
+
+	emit dataChanged(index(row, ColBigMove), index(row, ColBigMove),
 		{ Qt::DisplayRole, Qt::UserRole });
 }
 
@@ -184,7 +196,10 @@ void StockModel::addRecord(const StockRecord & record)
 	if (it != m_symbolToRow.constEnd())
 	{
 		const int row = it.value();
+		const double keepProb = m_data[row].bigMoveProb;
 		m_data[row] = record;
+		if (record.bigMoveProb < 0.0)
+			m_data[row].bigMoveProb = keepProb;
 		emit dataChanged(index(row, 0), index(row, ColCount - 1));
 		return;
 	}
@@ -226,6 +241,7 @@ QVariant StockModel::data(const QModelIndex & index, int role) const
 			case ColNetChange: return r.netChange;
 			case ColPctChange: return r.pctChange;
 			case ColMarketCap: return r.marketCap;
+			case ColBigMove:   return r.bigMoveProb;
 			default: return {};
 		}
 	}
@@ -240,6 +256,8 @@ QVariant StockModel::data(const QModelIndex & index, int role) const
 			case ColPctChange:
 			case ColMarketCap:
 				return QVariant(Qt::AlignRight | Qt::AlignVCenter);
+			case ColBigMove:
+				return QVariant(Qt::AlignCenter);
 			default:
 				return QVariant(Qt::AlignLeft | Qt::AlignVCenter);
 		}
@@ -257,7 +275,9 @@ QVariant StockModel::data(const QModelIndex & index, int role) const
 		case ColSymbol:    return r.symbol;
 		case ColName:      return r.name;
 		case ColLastSale:  return QString("$%1").arg(r.lastSale, 0, 'f', 2);
-		case ColVolume:    return locale.toString((qlonglong)r.volume);
+		case ColVolume:    return r.volume > 0.0
+			? locale.toString((qlonglong)r.volume)
+			: QString("-");
 		case ColNetChange: return QString::number(r.netChange, 'f', 2);
 		case ColPctChange: return QString("%1%").arg(r.pctChange, 0, 'f', 2);
 		case ColMarketCap:
@@ -274,6 +294,10 @@ QVariant StockModel::data(const QModelIndex & index, int role) const
 		}
 		case ColSector:    return r.sector;
 		case ColIndustry:  return r.industry;
+		case ColBigMove:
+			return r.bigMoveProb < 0.0
+				? QString("-")
+				: QString("%1%").arg(r.bigMoveProb * 100.0, 0, 'f', 0);
 		default: return {};
 	}
 }

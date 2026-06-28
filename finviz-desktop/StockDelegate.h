@@ -24,7 +24,8 @@ private:
 		PctChange = 5,
 		MarketCap = 6,
 		Sector    = 7,
-		Industry  = 8
+		Industry  = 8,
+		BigMove   = 9
 	};
 
 	static constexpr int RowHeight   = 32;
@@ -51,6 +52,10 @@ private:
 	void paintTextCell(QPainter *painter,
 					   const QStyleOptionViewItem &option,
 					   const QModelIndex &index) const;
+
+	void paintBigMoveCell(QPainter *painter,
+						  const QStyleOptionViewItem &option,
+						  const QModelIndex &index) const;
 
 	QColor drawBackground(QPainter *painter,
 						  const QStyleOptionViewItem &option) const;

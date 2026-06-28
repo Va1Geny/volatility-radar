@@ -15,6 +15,7 @@ struct StockRecord
 	double pctChange = 0.0;
 	double marketCap = 0.0;
 	double previousClose = 0.0;
+	double bigMoveProb = -1.0;
 	QString sector;
 	QString industry;
 	QString country;
@@ -35,6 +36,7 @@ public:
 		ColMarketCap,
 		ColSector,
 		ColIndustry,
+		ColBigMove,
 		ColCount
 	};
 
@@ -63,6 +65,7 @@ public:
 
 public slots:
 	void updateLivePrice(const QString & symbol, double price, double volume);
+	void setPrediction(const QString & symbol, double bigMoveProb);
 
 private:
 	QVector<StockRecord> m_data;

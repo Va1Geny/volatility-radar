@@ -39,6 +39,10 @@ void StockDelegate::paint(QPainter *painter,
 		paintSymbolCell(painter, option, index);
 		break;
 
+	case Column::BigMove:
+		paintBigMoveCell(painter, option, index);
+		break;
+
 	default:
 		paintTextCell(painter, option, index);
 		break;
@@ -178,4 +182,50 @@ void StockDelegate::paintTextCell(QPainter *painter,
 	QRect contentRect = option.rect.adjusted(CellPadding, 0, -CellPadding, 0);
 	QString text = index.data(Qt::DisplayRole).toString();
 	painter->drawText(contentRect, Qt::AlignVCenter | Qt::AlignLeft, text);
+}
+
+void StockDelegate::paintBigMoveCell(QPainter *painter,
+									 const QStyleOptionViewItem &option,
+									 const QModelIndex &index) const
+{
+	QColor defaultFg = drawBackground(painter, option);
+	const bool selected = option.state & QStyle::State_Selected;
+
+	const QVariant raw = index.data(Qt::UserRole);
+	const double prob = raw.isValid() ? raw.toDouble() : -1.0;
+
+	QRect contentRect = option.rect.adjusted(CellPadding, 0, -CellPadding, 0);
+
+	if (prob < 0.0)
+	{
+		painter->setPen(NeutralColor);
+		painter->setFont(option.font);
+		painter->drawText(contentRect, Qt::AlignCenter, QStringLiteral("-"));
+		return;
+	}
+
+	QColor accent;
+	if (prob >= 0.5)       accent = QColor(0xEF, 0x53, 0x50);
+	else if (prob >= 0.35) accent = QColor(0xF5, 0xA6, 0x23);
+	else                   accent = NeutralColor;
+
+	const QString text = QString::number(prob * 100.0, 'f', 0) + QStringLiteral("%");
+
+	QFontMetrics fm(option.font);
+	int textWidth = fm.horizontalAdvance(text);
+	int pillW = textWidth + 14;
+	int pillH = qMin(option.rect.height() - 4, 22);
+	int pillX = contentRect.center().x() - pillW / 2;
+	int pillY = option.rect.center().y() - pillH / 2;
+	QRectF pillRect(pillX, pillY, pillW, pillH);
+
+	QColor pillBg = accent;
+	pillBg.setAlphaF(0.20);
+	painter->setPen(Qt::NoPen);
+	painter->setBrush(pillBg);
+	painter->drawRoundedRect(pillRect, pillH / 2.0, pillH / 2.0);
+
+	painter->setPen(selected ? defaultFg : accent);
+	painter->setFont(option.font);
+	painter->drawText(pillRect, Qt::AlignCenter, text);
 }

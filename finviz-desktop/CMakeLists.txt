@@ -30,6 +30,8 @@ qt_add_executable(finviz-desktop
     FinnhubClient.h
     FinnhubRest.cpp
     FinnhubRest.h
+    PredictionClient.cpp
+    PredictionClient.h
 )
 
 target_link_libraries(finviz-desktop

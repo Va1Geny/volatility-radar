@@ -2643,7 +2643,7 @@
       "node_kind": "heading",
       "norm_label": "license and credits",
       "source_file": "README.md",
-      "source_location": "L202"
+      "source_location": "L204"
     },
     {
       "id": "readme_live_data_free_finnhub_key",
@@ -4896,6 +4896,18 @@
       "type": "external"
     },
     {
+      "id": "volatility_radar_mainwindow",
+      "label": "volatility_radar_mainwindow",
+      "_origin": "semantic",
+      "community": 13,
+      "community_name": "main.cpp",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "volatility_radar_mainwindow",
+      "source_file": "",
+      "type": "external"
+    },
+    {
       "id": "qabstractsocket",
       "label": "qabstractsocket",
       "_origin": "semantic",
@@ -5168,17 +5180,6 @@
       "external": true,
       "file_type": "concept",
       "norm_label": "qjsonobject",
-      "source_file": "",
-      "type": "external"
-    },
-    {
-      "id": "volatility_radar_mainwindow",
-      "label": "volatility_radar_mainwindow",
-      "community": 13,
-      "community_name": "main.cpp",
-      "external": true,
-      "file_type": "concept",
-      "norm_label": "volatility_radar_mainwindow",
       "source_file": "",
       "type": "external"
     }
@@ -10005,7 +10006,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L202",
+      "source_location": "L204",
       "weight": 1.0
     },
     {
@@ -11990,5 +11991,5 @@
       "source_file": "volatility-radar/watchlist.txt"
     }
   ],
-  "built_at_commit": "736b79f253bbdffb7dae0b269cfb209b016a9e75"
+  "built_at_commit": "2ae2e1dfa64e882c43abad93769e0002e44601c5"
 }

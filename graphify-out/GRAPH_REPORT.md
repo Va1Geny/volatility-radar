@@ -1,7 +1,7 @@
 # Graph Report - oopksr  (2026-09-30)
 
 ## Corpus Check
-- 30 files · ~9,529 words
+- 30 files · ~9,543 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 11 file(s) not represented in the graph (top: (none) 6, .mdc 1, .example 1)
 
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `736b79f2`
+- Built from commit: `2ae2e1df`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -50,9 +50,9 @@
   volatility-radar/FinnhubRest.h → volatility-radar/StockModel.h
 - `PredictionClient` --references--> `QTimer`  [EXTRACTED]
   volatility-radar/PredictionClient.h → volatility-radar/FinnhubRest.h
-- `_sweep_forever()` --indirect_call--> `predict_ticker()`  [INFERRED]
-  volatility-radar/analyzer/predictor/serve.py → volatility-radar/analyzer/predictor/predict.py
 - `build_inference_window()` --calls--> `build_features()`  [EXTRACTED]
+  volatility-radar/analyzer/predictor/dataset.py → volatility-radar/analyzer/predictor/features.py
+- `build_training_set()` --calls--> `build_features()`  [EXTRACTED]
   volatility-radar/analyzer/predictor/dataset.py → volatility-radar/analyzer/predictor/features.py
 
 ## Import Cycles

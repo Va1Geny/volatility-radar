@@ -2559,7 +2559,7 @@
       "node_kind": "heading",
       "norm_label": "1. install the prerequisites",
       "source_file": "README.md",
-      "source_location": "L24"
+      "source_location": "L26"
     },
     {
       "id": "readme_2_get_the_code",
@@ -2571,7 +2571,7 @@
       "node_kind": "heading",
       "norm_label": "2. get the code",
       "source_file": "README.md",
-      "source_location": "L35"
+      "source_location": "L37"
     },
     {
       "id": "readme_3_build_and_run",
@@ -2583,7 +2583,7 @@
       "node_kind": "heading",
       "norm_label": "3. build and run",
       "source_file": "README.md",
-      "source_location": "L42"
+      "source_location": "L44"
     },
     {
       "id": "readme_big_move_predictions_optional",
@@ -2595,7 +2595,7 @@
       "node_kind": "heading",
       "norm_label": "big-move predictions (optional)",
       "source_file": "README.md",
-      "source_location": "L102"
+      "source_location": "L104"
     },
     {
       "id": "readme_choosing_stocks",
@@ -2607,7 +2607,7 @@
       "node_kind": "heading",
       "norm_label": "choosing stocks",
       "source_file": "README.md",
-      "source_location": "L86"
+      "source_location": "L88"
     },
     {
       "id": "readme_contributing_people_and_ai_agents",
@@ -2619,7 +2619,7 @@
       "node_kind": "heading",
       "norm_label": "contributing (people and ai agents)",
       "source_file": "README.md",
-      "source_location": "L192"
+      "source_location": "L194"
     },
     {
       "id": "readme_how_it_fits_together",
@@ -2631,7 +2631,7 @@
       "node_kind": "heading",
       "norm_label": "how it fits together",
       "source_file": "README.md",
-      "source_location": "L152"
+      "source_location": "L154"
     },
     {
       "id": "readme_license_and_credits",
@@ -2643,7 +2643,7 @@
       "node_kind": "heading",
       "norm_label": "license and credits",
       "source_file": "README.md",
-      "source_location": "L204"
+      "source_location": "L206"
     },
     {
       "id": "readme_live_data_free_finnhub_key",
@@ -2655,7 +2655,7 @@
       "node_kind": "heading",
       "norm_label": "live data (free finnhub key)",
       "source_file": "README.md",
-      "source_location": "L66"
+      "source_location": "L68"
     },
     {
       "id": "readme_project_layout",
@@ -2667,7 +2667,7 @@
       "node_kind": "heading",
       "norm_label": "project layout",
       "source_file": "README.md",
-      "source_location": "L162"
+      "source_location": "L164"
     },
     {
       "id": "readme_quick_start",
@@ -2679,7 +2679,7 @@
       "node_kind": "heading",
       "norm_label": "quick start",
       "source_file": "README.md",
-      "source_location": "L22"
+      "source_location": "L24"
     },
     {
       "id": "readme_run_the_prediction_feed",
@@ -2691,7 +2691,7 @@
       "node_kind": "heading",
       "norm_label": "run the prediction feed",
       "source_file": "README.md",
-      "source_location": "L137"
+      "source_location": "L139"
     },
     {
       "id": "readme_setup_once",
@@ -2703,7 +2703,7 @@
       "node_kind": "heading",
       "norm_label": "setup (once)",
       "source_file": "README.md",
-      "source_location": "L112"
+      "source_location": "L114"
     },
     {
       "id": "readme_train_the_model_optional",
@@ -2715,7 +2715,7 @@
       "node_kind": "heading",
       "norm_label": "train the model (optional)",
       "source_file": "README.md",
-      "source_location": "L123"
+      "source_location": "L125"
     },
     {
       "id": "readme_troubleshooting",
@@ -2727,7 +2727,7 @@
       "node_kind": "heading",
       "norm_label": "troubleshooting",
       "source_file": "README.md",
-      "source_location": "L181"
+      "source_location": "L183"
     },
     {
       "id": "readme_volatility_radar",
@@ -2751,7 +2751,7 @@
       "node_kind": "heading",
       "norm_label": "what changes in live mode",
       "source_file": "README.md",
-      "source_location": "L92"
+      "source_location": "L94"
     },
     {
       "id": "volatility_radar_main",
@@ -9863,7 +9863,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L112",
+      "source_location": "L114",
       "weight": 1.0
     },
     {
@@ -9874,7 +9874,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L123",
+      "source_location": "L125",
       "weight": 1.0
     },
     {
@@ -9885,7 +9885,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L137",
+      "source_location": "L139",
       "weight": 1.0
     },
     {
@@ -9896,7 +9896,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L86",
+      "source_location": "L88",
       "weight": 1.0
     },
     {
@@ -9907,7 +9907,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L92",
+      "source_location": "L94",
       "weight": 1.0
     },
     {
@@ -9918,7 +9918,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L24",
+      "source_location": "L26",
       "weight": 1.0
     },
     {
@@ -9929,7 +9929,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L35",
+      "source_location": "L37",
       "weight": 1.0
     },
     {
@@ -9940,7 +9940,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L42",
+      "source_location": "L44",
       "weight": 1.0
     },
     {
@@ -9951,7 +9951,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L102",
+      "source_location": "L104",
       "weight": 1.0
     },
     {
@@ -9962,7 +9962,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L152",
+      "source_location": "L154",
       "weight": 1.0
     },
     {
@@ -9973,7 +9973,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L162",
+      "source_location": "L164",
       "weight": 1.0
     },
     {
@@ -9984,7 +9984,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L181",
+      "source_location": "L183",
       "weight": 1.0
     },
     {
@@ -9995,7 +9995,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L192",
+      "source_location": "L194",
       "weight": 1.0
     },
     {
@@ -10006,7 +10006,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L204",
+      "source_location": "L206",
       "weight": 1.0
     },
     {
@@ -10017,7 +10017,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L22",
+      "source_location": "L24",
       "weight": 1.0
     },
     {
@@ -10028,7 +10028,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L66",
+      "source_location": "L68",
       "weight": 1.0
     },
     {
@@ -11502,7 +11502,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L194",
+      "source_location": "L196",
       "weight": 1.0
     },
     {
@@ -11513,7 +11513,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L195",
+      "source_location": "L197",
       "weight": 1.0
     },
     {
@@ -11991,5 +11991,5 @@
       "source_file": "volatility-radar/watchlist.txt"
     }
   ],
-  "built_at_commit": "2ae2e1dfa64e882c43abad93769e0002e44601c5"
+  "built_at_commit": "23c1c9176ceafcabbbc2d2b4f72ec6b1faea3619"
 }

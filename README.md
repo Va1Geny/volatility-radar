@@ -13,6 +13,8 @@ the next week.
 - **Big Move column**: the model's probability of an unusually large move (up *or* down) within 5 trading days.
 - **Offline mode**: with no API key, the app loads a bundled snapshot of about 7,000 US listings, so you can try it with no account.
 
+![Volatility Radar with live Finnhub prices and Big Move predictions](docs/app.png)
+
 > Not financial advice. The model predicts *volatility*, not direction, and
 > its edge is modest (validation AUC around 0.63). Use it to rank stocks worth
 > watching, never as a buy/sell signal.

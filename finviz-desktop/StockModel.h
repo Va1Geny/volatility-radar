@@ -2,7 +2,6 @@
 #include <QAbstractTableModel>
 #include <QString>
 #include <QVector>
-#include <QSet>
 #include <QHash>
 
 struct StockRecord
@@ -15,7 +14,6 @@ struct StockRecord
 	double pctChange = 0.0;
 	double marketCap = 0.0;
 	double previousClose = 0.0;
-	double bigMoveProb = -1.0;
 	QString sector;
 	QString industry;
 	QString country;
@@ -42,9 +40,8 @@ public:
 
 	explicit StockModel(QObject * parent = nullptr);
 
-	void loadFromCsv(const QString & path);
+	void loadFromJson(const QString & path);
 
-	void clearAll();
 	void addRecord(const StockRecord & record);
 
 	int rowCount(const QModelIndex & parent = {}) const override;
@@ -59,18 +56,14 @@ public:
 
 	QStringList uniqueSectors() const;
 
-	QStringList uniqueCountries() const;
-
-	QStringList allSymbols() const;
-
 public slots:
-	void updateLivePrice(const QString & symbol, double price, double volume);
+	void updateLivePrice(const QString & symbol, double price);
 	void setPrediction(const QString & symbol, double bigMoveProb);
 
 private:
 	QVector<StockRecord> m_data;
-	QSet<QString> m_sectors;
-	QSet<QString> m_countries;
 	QHash<QString, int> m_symbolToRow;
+	// By symbol, not row: predictions can arrive before the stock's row is loaded.
+	QHash<QString, double> m_bigMoveProb;
 	static const QStringList HEADERS;
 };

@@ -8,8 +8,7 @@ class PredictionClient: public QObject
 {
 	Q_OBJECT
 public:
-	explicit PredictionClient(const QString & url = "ws://127.0.0.1:8765",
-		QObject * parent = nullptr);
+	explicit PredictionClient(const QString & url, QObject * parent = nullptr);
 
 	void start();
 
@@ -27,8 +26,11 @@ private slots:
 private:
 	void scheduleReconnect();
 
+	static constexpr int MinReconnectMs = 5000;
+	static constexpr int MaxReconnectMs = 30000;
+
 	QWebSocket m_socket;
 	QString m_url;
 	QTimer m_reconnectTimer;
-	int m_reconnectMs = 5000;
+	int m_reconnectMs = MinReconnectMs;
 };

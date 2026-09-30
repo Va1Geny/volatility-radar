@@ -7,11 +7,8 @@
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 class QChartView;
+class QLabel;
 QT_END_NAMESPACE
-
-class FinnhubClient;
-class FinnhubRest;
-class PredictionClient;
 
 class MainWindow: public QMainWindow
 {
@@ -26,26 +23,20 @@ private slots:
 	void onApplyFilters();
 	void onResetFilters();
 	void onSearchTextChanged(const QString & text);
-	void onTradeReceived(const QString & symbol, double price, double volume);
+	void onTradeReceived(const QString & symbol);
 
 private:
 	void setupTheme();
 	void populateFilterCombos();
 	void updateFilterStatus();
 	void createEmbeddedChart();
-	void setupLiveData();
+	void setupLiveData(const QString & token);
 	void setupPredictions();
-	QString resolveToken() const;
-	static QStringList megaCapWatchlist();
 
 	Ui::MainWindow * ui;
 	StockModel * m_model;
 	StockFilterProxy * m_proxy;
 	StockDelegate * m_delegate;
 	QChartView * m_chartView = nullptr;
-	FinnhubClient * m_finnhub = nullptr;
-	FinnhubRest * m_rest = nullptr;
-	PredictionClient * m_predictions = nullptr;
-	QString m_token;
-	QStringList m_watchlist;
+	QLabel * m_predictionStatus = nullptr;
 };

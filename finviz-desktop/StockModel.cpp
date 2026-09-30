@@ -1,14 +1,15 @@
 #include "StockModel.h"
+#include <QDebug>
 #include <QFile>
-#include <QTextStream>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QLocale>
+#include <QSet>
 
 const QStringList StockModel::HEADERS = {
 	"Symbol", "Name", "Last Sale", "Volume",
-	"Net Change", "% Change", "Market Cap", "Sector", "Industry", "Volatility"
+	"Net Change", "% Change", "Market Cap", "Sector", "Industry", "Big Move"
 };
 
 
@@ -23,28 +24,15 @@ const StockRecord & StockModel::recordAt(int row) const
 
 QStringList StockModel::uniqueSectors() const
 {
-	QStringList list(m_sectors.begin(), m_sectors.end());
-	list.sort();
-	return list;
-}
-
-QStringList StockModel::uniqueCountries() const
-{
-	QStringList list(m_countries.begin(), m_countries.end());
-	list.sort();
-	return list;
-}
-
-QStringList StockModel::allSymbols() const
-{
-	QStringList list;
-	list.reserve(m_data.size());
+	QSet<QString> sectors;
 	for (const StockRecord & r : m_data)
-		list << r.symbol;
+		if (!r.sector.isEmpty()) sectors.insert(r.sector);
+	QStringList list(sectors.begin(), sectors.end());
+	list.sort();
 	return list;
 }
 
-void StockModel::updateLivePrice(const QString & symbol, double price, double volume)
+void StockModel::updateLivePrice(const QString & symbol, double price)
 {
 	auto it = m_symbolToRow.constFind(symbol);
 	if (it == m_symbolToRow.constEnd()) return;
@@ -58,8 +46,6 @@ void StockModel::updateLivePrice(const QString & symbol, double price, double vo
 		r.netChange = price - r.previousClose;
 		r.pctChange = r.netChange / r.previousClose * 100.0;
 	}
-	if (volume > 0.0)
-		r.volume += volume;
 
 	emit dataChanged(index(row, ColLastSale), index(row, ColPctChange),
 		{ Qt::DisplayRole, Qt::UserRole });
@@ -67,124 +53,66 @@ void StockModel::updateLivePrice(const QString & symbol, double price, double vo
 
 void StockModel::setPrediction(const QString & symbol, double bigMoveProb)
 {
+	m_bigMoveProb.insert(symbol, bigMoveProb);
+
 	auto it = m_symbolToRow.constFind(symbol);
 	if (it == m_symbolToRow.constEnd()) return;
 
 	const int row = it.value();
-	m_data[row].bigMoveProb = bigMoveProb;
-
 	emit dataChanged(index(row, ColBigMove), index(row, ColBigMove),
 		{ Qt::DisplayRole, Qt::UserRole });
 }
 
-void StockModel::loadFromCsv(const QString & path)
+// Offline snapshot: the Nasdaq screener JSON export ({"data":{"rows":[...]}}).
+void StockModel::loadFromJson(const QString & path)
 {
 	QFile file(path);
-	if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) return;
+	if (!file.open(QIODevice::ReadOnly))
+	{
+		qWarning() << "Cannot open snapshot:" << path;
+		return;
+	}
 
-	QByteArray rawData = file.readAll();
-	file.close();
+	QJsonParseError parseError;
+	const QJsonDocument doc = QJsonDocument::fromJson(file.readAll(), &parseError);
+	if (parseError.error != QJsonParseError::NoError)
+	{
+		qWarning() << "JSON parse error in" << path << ":" << parseError.errorString();
+		return;
+	}
+
+	auto num = [](const QJsonValue & v)
+	{
+		return v.toString().remove('$').remove('%').trimmed().toDouble();
+	};
 
 	beginResetModel();
 	m_data.clear();
-	m_sectors.clear();
-	m_countries.clear();
 	m_symbolToRow.clear();
 
-	QByteArray trimmed = rawData.trimmed();
-	if (trimmed.startsWith('{'))
+	const QJsonArray rows = doc.object()["data"].toObject()["rows"].toArray();
+	for (const QJsonValue & val : rows)
 	{
-		QJsonParseError parseError;
-		QJsonDocument doc = QJsonDocument::fromJson(rawData, &parseError);
-		if (parseError.error != QJsonParseError::NoError)
-		{
-			qWarning() << "JSON parse error:" << parseError.errorString();
-			endResetModel();
-			return;
-		}
+		const QJsonObject obj = val.toObject();
+		StockRecord r;
+		r.symbol    = obj["symbol"].toString().trimmed();
+		r.name      = obj["name"].toString().trimmed();
+		r.lastSale  = num(obj["lastsale"]);
+		r.volume    = num(obj["volume"]);
+		r.netChange = num(obj["netchange"]);
+		r.pctChange = num(obj["pctchange"]);
+		r.marketCap = num(obj["marketCap"]);
+		r.country   = obj["country"].toString().trimmed();
+		r.ipoyear   = obj["ipoyear"].toString().trimmed();
+		r.industry  = obj["industry"].toString().trimmed();
+		r.sector    = obj["sector"].toString().trimmed();
+		r.previousClose = r.lastSale - r.netChange;
 
-		QJsonObject root = doc.object();
-		QJsonObject data = root["data"].toObject();
-		QJsonArray rows = data["rows"].toArray();
-
-		for (const QJsonValue & val : rows)
-		{
-			QJsonObject obj = val.toObject();
-			StockRecord r;
-			r.symbol   = obj["symbol"].toString().trimmed();
-			r.name     = obj["name"].toString().trimmed();
-			QString lastSaleStr = obj["lastsale"].toString().trimmed();
-			lastSaleStr.remove('$');
-			r.lastSale = lastSaleStr.toDouble();
-			r.volume   = obj["volume"].toString().trimmed().toDouble();
-			r.netChange = obj["netchange"].toString().trimmed().toDouble();
-			QString pctStr = obj["pctchange"].toString().trimmed();
-			pctStr.remove('%');
-			r.pctChange = pctStr.toDouble();
-			r.marketCap = obj["marketCap"].toString().trimmed().toDouble();
-			r.country  = obj["country"].toString().trimmed();
-			r.ipoyear  = obj["ipoyear"].toString().trimmed();
-			r.industry = obj["industry"].toString().trimmed();
-			r.sector   = obj["sector"].toString().trimmed();
-			r.previousClose = r.lastSale - r.netChange;
-
-			if (!r.symbol.isEmpty())
-			{
-				m_data.append(r);
-				m_symbolToRow.insert(r.symbol, m_data.size() - 1);
-				if (!r.sector.isEmpty()) m_sectors.insert(r.sector);
-				if (!r.country.isEmpty()) m_countries.insert(r.country);
-			}
-		}
-	}
-	else
-	{
-		QTextStream in(rawData);
-		in.readLine();
-
-		while (!in.atEnd())
-		{
-			QString line = in.readLine();
-			QStringList fields = line.split(",");
-
-			if (fields.size() < 11)
-			{
-				break;
-			}
-
-			StockRecord r;
-			r.symbol   = fields[0].trimmed().remove('"');
-			r.name     = fields[1].trimmed().remove('"');
-			r.lastSale = fields[2].trimmed().remove('"').remove('$').toDouble();
-			r.netChange = fields[4].trimmed().remove('"').toDouble();
-			r.pctChange = fields[5].trimmed().remove('"').remove('%').toDouble();
-			r.volume   = fields[3].trimmed().remove('"').toDouble();
-			r.country  = fields[7].trimmed().remove('"');
-			r.ipoyear  = fields[8].trimmed().remove('"');
-			r.industry = fields[9].trimmed().remove('"');
-			r.sector   = fields[10].trimmed().remove('"');
-			r.previousClose = r.lastSale - r.netChange;
-
-			if (!r.symbol.isEmpty())
-			{
-				m_data.append(r);
-				m_symbolToRow.insert(r.symbol, m_data.size() - 1);
-				if (!r.sector.isEmpty()) m_sectors.insert(r.sector);
-				if (!r.country.isEmpty()) m_countries.insert(r.country);
-			}
-		}
+		if (r.symbol.isEmpty() || m_symbolToRow.contains(r.symbol)) continue;
+		m_symbolToRow.insert(r.symbol, m_data.size());
+		m_data.append(r);
 	}
 
-	endResetModel();
-}
-
-void StockModel::clearAll()
-{
-	beginResetModel();
-	m_data.clear();
-	m_sectors.clear();
-	m_countries.clear();
-	m_symbolToRow.clear();
 	endResetModel();
 }
 
@@ -196,10 +124,7 @@ void StockModel::addRecord(const StockRecord & record)
 	if (it != m_symbolToRow.constEnd())
 	{
 		const int row = it.value();
-		const double keepProb = m_data[row].bigMoveProb;
 		m_data[row] = record;
-		if (record.bigMoveProb < 0.0)
-			m_data[row].bigMoveProb = keepProb;
 		emit dataChanged(index(row, 0), index(row, ColCount - 1));
 		return;
 	}
@@ -208,8 +133,6 @@ void StockModel::addRecord(const StockRecord & record)
 	beginInsertRows(QModelIndex(), row, row);
 	m_data.append(record);
 	m_symbolToRow.insert(record.symbol, row);
-	if (!record.sector.isEmpty()) m_sectors.insert(record.sector);
-	if (!record.country.isEmpty()) m_countries.insert(record.country);
 	endInsertRows();
 }
 
@@ -220,7 +143,7 @@ int StockModel::rowCount(const QModelIndex &) const
 
 int StockModel::columnCount(const QModelIndex &) const
 {
-	return HEADERS.size();
+	return ColCount;
 }
 
 QVariant StockModel::data(const QModelIndex & index, int role) const
@@ -231,7 +154,9 @@ QVariant StockModel::data(const QModelIndex & index, int role) const
 	}
 
 	const StockRecord & r = m_data[index.row()];
+	const double bigMoveProb = m_bigMoveProb.value(r.symbol, -1.0);
 
+	// Raw numbers for sorting and painting. Only numeric columns answer this role.
 	if (role == Qt::UserRole)
 	{
 		switch (index.column())
@@ -241,25 +166,8 @@ QVariant StockModel::data(const QModelIndex & index, int role) const
 			case ColNetChange: return r.netChange;
 			case ColPctChange: return r.pctChange;
 			case ColMarketCap: return r.marketCap;
-			case ColBigMove:   return r.bigMoveProb;
+			case ColBigMove:   return bigMoveProb;
 			default: return {};
-		}
-	}
-
-	if (role == Qt::TextAlignmentRole)
-	{
-		switch (index.column())
-		{
-			case ColLastSale:
-			case ColVolume:
-			case ColNetChange:
-			case ColPctChange:
-			case ColMarketCap:
-				return QVariant(Qt::AlignRight | Qt::AlignVCenter);
-			case ColBigMove:
-				return QVariant(Qt::AlignCenter);
-			default:
-				return QVariant(Qt::AlignLeft | Qt::AlignVCenter);
 		}
 	}
 
@@ -268,15 +176,13 @@ QVariant StockModel::data(const QModelIndex & index, int role) const
 		return {};
 	}
 
-	QLocale locale(QLocale::English, QLocale::UnitedStates);
-
 	switch (index.column())
 	{
 		case ColSymbol:    return r.symbol;
 		case ColName:      return r.name;
 		case ColLastSale:  return QString("$%1").arg(r.lastSale, 0, 'f', 2);
 		case ColVolume:    return r.volume > 0.0
-			? locale.toString((qlonglong)r.volume)
+			? QLocale(QLocale::English, QLocale::UnitedStates).toString((qlonglong)r.volume)
 			: QString("-");
 		case ColNetChange: return QString::number(r.netChange, 'f', 2);
 		case ColPctChange: return QString("%1%").arg(r.pctChange, 0, 'f', 2);
@@ -295,9 +201,9 @@ QVariant StockModel::data(const QModelIndex & index, int role) const
 		case ColSector:    return r.sector;
 		case ColIndustry:  return r.industry;
 		case ColBigMove:
-			return r.bigMoveProb < 0.0
+			return bigMoveProb < 0.0
 				? QString("-")
-				: QString("%1%").arg(r.bigMoveProb * 100.0, 0, 'f', 0);
+				: QString("%1%").arg(bigMoveProb * 100.0, 0, 'f', 0);
 		default: return {};
 	}
 }

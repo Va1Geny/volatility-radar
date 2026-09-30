@@ -1,22 +1,5 @@
 #include "StockFilterProxy.h"
-
-static constexpr int ColSymbol    = 0;
-static constexpr int ColName      = 1;
-static constexpr int ColLastSale  = 2;
-static constexpr int ColVolume    = 3;
-static constexpr int ColNetChange = 4;
-static constexpr int ColPctChange = 5;
-static constexpr int ColMarketCap = 6;
-static constexpr int ColSector    = 7;
-
-static bool isNumericColumn(int col)
-{
-	return col == ColLastSale
-		|| col == ColVolume
-		|| col == ColNetChange
-		|| col == ColPctChange
-		|| col == ColMarketCap;
-}
+#include "StockModel.h"
 
 StockFilterProxy::StockFilterProxy(QObject* parent)
 	: QSortFilterProxyModel(parent)
@@ -63,8 +46,8 @@ bool StockFilterProxy::filterAcceptsRow(int sourceRow, const QModelIndex& source
 	};
 
 	if (!m_textFilter.isEmpty()) {
-		const QString symbol = idx(ColSymbol).data(Qt::DisplayRole).toString();
-		const QString name   = idx(ColName).data(Qt::DisplayRole).toString();
+		const QString symbol = idx(StockModel::ColSymbol).data(Qt::DisplayRole).toString();
+		const QString name   = idx(StockModel::ColName).data(Qt::DisplayRole).toString();
 
 		if (!symbol.contains(m_textFilter, Qt::CaseInsensitive)
 			&& !name.contains(m_textFilter, Qt::CaseInsensitive)) {
@@ -72,7 +55,7 @@ bool StockFilterProxy::filterAcceptsRow(int sourceRow, const QModelIndex& source
 		}
 	}
 
-	const double price = idx(ColLastSale).data(Qt::UserRole).toDouble();
+	const double price = idx(StockModel::ColLastSale).data(Qt::UserRole).toDouble();
 
 	if (m_minPrice > 0.0 && price < m_minPrice) {
 		return false;
@@ -83,7 +66,7 @@ bool StockFilterProxy::filterAcceptsRow(int sourceRow, const QModelIndex& source
 	}
 
 	if (!m_sectorFilter.isEmpty()) {
-		const QString sector = idx(ColSector).data(Qt::DisplayRole).toString();
+		const QString sector = idx(StockModel::ColSector).data(Qt::DisplayRole).toString();
 		if (sector != m_sectorFilter) {
 			return false;
 		}
@@ -92,12 +75,13 @@ bool StockFilterProxy::filterAcceptsRow(int sourceRow, const QModelIndex& source
 	return true;
 }
 
+// Numeric columns expose their raw value via Qt::UserRole; sort on that, not the formatted text.
 bool StockFilterProxy::lessThan(const QModelIndex& left, const QModelIndex& right) const
 {
-	if (isNumericColumn(left.column())) {
-		const double lVal = left.data(Qt::UserRole).toDouble();
-		const double rVal = right.data(Qt::UserRole).toDouble();
-		return lVal < rVal;
+	const QVariant l = left.data(Qt::UserRole);
+	const QVariant r = right.data(Qt::UserRole);
+	if (l.isValid() && r.isValid()) {
+		return l.toDouble() < r.toDouble();
 	}
 
 	return QSortFilterProxyModel::lessThan(left, right);

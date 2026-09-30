@@ -17,10 +17,7 @@ PredictionClient::PredictionClient(const QString & url, QObject * parent)
 		this, &PredictionClient::onError);
 
 	m_reconnectTimer.setSingleShot(true);
-	connect(&m_reconnectTimer, &QTimer::timeout, this, [this]
-	{
-		m_socket.open(QUrl(m_url));
-	});
+	connect(&m_reconnectTimer, &QTimer::timeout, this, &PredictionClient::start);
 }
 
 void PredictionClient::start()
@@ -31,6 +28,7 @@ void PredictionClient::start()
 void PredictionClient::onConnected()
 {
 	m_reconnectTimer.stop();
+	m_reconnectMs = MinReconnectMs;
 	emit connected();
 }
 
@@ -47,8 +45,9 @@ void PredictionClient::onError(QAbstractSocket::SocketError)
 
 void PredictionClient::scheduleReconnect()
 {
-	if (!m_reconnectTimer.isActive())
-		m_reconnectTimer.start(m_reconnectMs);
+	if (m_reconnectTimer.isActive()) return;
+	m_reconnectTimer.start(m_reconnectMs);
+	m_reconnectMs = qMin(m_reconnectMs * 2, MaxReconnectMs);
 }
 
 void PredictionClient::onTextMessageReceived(const QString & message)

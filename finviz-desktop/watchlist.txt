@@ -1,0 +1,44 @@
+# Symbols tracked by the desktop app (live prices) and the analyzer (predictions).
+# One ticker per line, Finnhub/US format (BRK.B, not BRK-B). '#' starts a comment.
+# Free Finnhub keys allow 60 REST calls/min; each symbol costs 2 calls at startup.
+AAPL
+MSFT
+GOOGL
+AMZN
+NVDA
+META
+TSLA
+BRK.B
+JPM
+V
+MA
+WMT
+JNJ
+PG
+HD
+KO
+PEP
+DIS
+NFLX
+AMD
+INTC
+CSCO
+ORCL
+ADBE
+CRM
+NKE
+MCD
+BA
+XOM
+CVX
+PFE
+MRK
+BAC
+VZ
+IBM
+QCOM
+COST
+TSM
+BABA
+TM
+TXN

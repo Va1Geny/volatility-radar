@@ -1,7 +1,8 @@
 #include "StockDelegate.h"
+#include "StockModel.h"
 
+#include <QFontMetrics>
 #include <QPainter>
-#include <QApplication>
 
 StockDelegate::StockDelegate(QObject *parent)
 	: QStyledItemDelegate(parent)
@@ -24,22 +25,22 @@ void StockDelegate::paint(QPainter *painter,
 	painter->setRenderHint(QPainter::Antialiasing, true);
 
 	switch (index.column()) {
-	case Column::NetChange:
-	case Column::PctChange:
+	case StockModel::ColNetChange:
+	case StockModel::ColPctChange:
 		paintChangeCell(painter, option, index);
 		break;
 
-	case Column::Price:
-	case Column::Volume:
-	case Column::MarketCap:
+	case StockModel::ColLastSale:
+	case StockModel::ColVolume:
+	case StockModel::ColMarketCap:
 		paintNumericCell(painter, option, index);
 		break;
 
-	case Column::Symbol:
+	case StockModel::ColSymbol:
 		paintSymbolCell(painter, option, index);
 		break;
 
-	case Column::BigMove:
+	case StockModel::ColBigMove:
 		paintBigMoveCell(painter, option, index);
 		break;
 
@@ -49,23 +50,6 @@ void StockDelegate::paint(QPainter *painter,
 	}
 
 	painter->restore();
-}
-
-double StockDelegate::numericValue(const QModelIndex &index)
-{
-	QVariant raw = index.data(Qt::UserRole);
-	if (raw.isValid() && raw.canConvert<double>())
-		return raw.toDouble();
-
-	QString text = index.data(Qt::DisplayRole).toString().trimmed();
-	text.remove(QChar('$'));
-	text.remove(QChar('%'));
-	text.remove(QChar(','));
-	text.remove(QChar('+'));
-
-	bool ok = false;
-	double val = text.toDouble(&ok);
-	return ok ? val : 0.0;
 }
 
 QColor StockDelegate::drawBackground(QPainter *painter,
@@ -95,7 +79,7 @@ void StockDelegate::paintChangeCell(QPainter *painter,
 	QColor defaultFg = drawBackground(painter, option);
 	const bool selected = option.state & QStyle::State_Selected;
 
-	const double value = numericValue(index);
+	const double value = index.data(Qt::UserRole).toDouble();
 	const QString text = index.data(Qt::DisplayRole).toString().trimmed();
 
 	QColor fg;
@@ -205,9 +189,9 @@ void StockDelegate::paintBigMoveCell(QPainter *painter,
 	}
 
 	QColor accent;
-	if (prob >= 0.5)       accent = QColor(0xEF, 0x53, 0x50);
-	else if (prob >= 0.35) accent = QColor(0xF5, 0xA6, 0x23);
-	else                   accent = NeutralColor;
+	if (prob >= BigMoveAlert)     accent = NegativeColor;
+	else if (prob >= BigMoveWarn) accent = WarnColor;
+	else                          accent = NeutralColor;
 
 	const QString text = QString::number(prob * 100.0, 'f', 0) + QStringLiteral("%");
 

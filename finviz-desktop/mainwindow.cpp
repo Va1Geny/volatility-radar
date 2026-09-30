@@ -11,11 +11,54 @@
 #include <QCoreApplication>
 #include <QFile>
 #include <QFileInfo>
-#include <QLocale>
+#include <QLabel>
 #include <QMap>
-#include <QSet>
+#include <QStatusBar>
 #include <QValueAxis>
 #include <QVBoxLayout>
+
+// The source tree when built from source (so edits apply without a copy step), else next to the exe.
+static QString appFile(const QString & name)
+{
+	const QString inSource = QString(FINVIZ_SOURCE_DIR) + '/' + name;
+	return QFileInfo::exists(inSource) ? inSource : QCoreApplication::applicationDirPath() + '/' + name;
+}
+
+// FINNHUB_API_KEY from the environment, else from a .env file (KEY=value lines).
+static QString resolveToken()
+{
+	const QString fromEnv = qEnvironmentVariable("FINNHUB_API_KEY").trimmed();
+	if (!fromEnv.isEmpty()) return fromEnv;
+
+	QFile env(appFile(".env"));
+	if (!env.open(QIODevice::ReadOnly | QIODevice::Text)) return {};
+	const QString key = "FINNHUB_API_KEY=";
+	while (!env.atEnd())
+	{
+		const QString line = QString::fromUtf8(env.readLine()).trimmed();
+		if (line.startsWith(key))
+			return line.mid(key.size()).remove('"').remove('\'').trimmed();
+	}
+	return {};
+}
+
+// One symbol per line; '#' starts a comment. Shared with analyzer/predictor/config.py.
+static QStringList loadWatchlist()
+{
+	QStringList symbols;
+	QFile file(appFile("watchlist.txt"));
+	if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+	{
+		qWarning() << "watchlist.txt not found";
+		return symbols;
+	}
+	while (!file.atEnd())
+	{
+		const QString sym = QString::fromUtf8(file.readLine()).section('#', 0, 0).trimmed().toUpper();
+		if (!sym.isEmpty()) symbols << sym;
+	}
+	return symbols;
+}
 
 MainWindow::MainWindow(QWidget * parent)
 	: QMainWindow(parent)
@@ -27,19 +70,13 @@ MainWindow::MainWindow(QWidget * parent)
 	ui->setupUi(this);
 	setupTheme();
 
-	m_token = resolveToken();
-	m_watchlist = megaCapWatchlist();
-
-	if (m_token.isEmpty())
-	{
-		QString csvPath = QCoreApplication::applicationDirPath() + "\\stocks.csv";
-		QFileInfo check_file(csvPath);
-		if (!check_file.exists())
-			qWarning() << "Error: stocks.csv file not found at:" << csvPath;
-		m_model->loadFromCsv(csvPath);
-	}
+	const QString token = resolveToken();
+	if (token.isEmpty())
+		m_model->loadFromJson(appFile("stocks.json"));
 
 	m_proxy->setSourceModel(m_model);
+	// Live ticks must not reshuffle rows under the cursor: re-sort only on header click or after a load.
+	m_proxy->setDynamicSortFilter(false);
 
 	ui->tableView->setModel(m_proxy);
 	ui->tableView->setItemDelegate(m_delegate);
@@ -53,10 +90,11 @@ MainWindow::MainWindow(QWidget * parent)
 	ui->tableView->verticalHeader()->setDefaultSectionSize(32);
 	ui->tableView->setShowGrid(true);
 	ui->tableView->setSortingEnabled(true);
+	ui->tableView->sortByColumn(StockModel::ColSymbol, Qt::AscendingOrder);
 	ui->tableView->setAlternatingRowColors(true);
 
 	ui->tableView->setColumnWidth(StockModel::ColSymbol, 80);
-	ui->tableView->setColumnWidth(StockModel::ColName, 250);
+	ui->tableView->setColumnWidth(StockModel::ColName, 220);
 	ui->tableView->setColumnWidth(StockModel::ColLastSale, 100);
 	ui->tableView->setColumnWidth(StockModel::ColVolume, 110);
 	ui->tableView->setColumnWidth(StockModel::ColNetChange, 100);
@@ -91,10 +129,11 @@ MainWindow::MainWindow(QWidget * parent)
 
 	createEmbeddedChart();
 
-	setupLiveData();
-	setupPredictions();
+	m_predictionStatus = new QLabel("Predictions: offline", this);
+	statusBar()->addPermanentWidget(m_predictionStatus);
 
-	statusBar()->showMessage("Ready");
+	setupLiveData(token);
+	setupPredictions();
 }
 
 MainWindow::~MainWindow()
@@ -104,14 +143,9 @@ MainWindow::~MainWindow()
 
 void MainWindow::setupTheme()
 {
-	QString qssPath = QCoreApplication::applicationDirPath() + "\\style.qss";
-	QFile qssFile(qssPath);
+	QFile qssFile(appFile("style.qss"));
 	if (qssFile.open(QIODevice::ReadOnly | QIODevice::Text))
-	{
-		QString styleSheet = qssFile.readAll();
-		qApp->setStyleSheet(styleSheet);
-		qssFile.close();
-	}
+		qApp->setStyleSheet(QString::fromUtf8(qssFile.readAll()));
 
 	setWindowTitle("FINVIZ TERMINAL");
 	resize(1600, 900);
@@ -164,94 +198,86 @@ void MainWindow::createEmbeddedChart()
 	ui->chartContainerLayout->addWidget(m_chartView);
 }
 
-QString MainWindow::resolveToken() const
+void MainWindow::setupLiveData(const QString & token)
 {
-	QString token = qEnvironmentVariable("FINNHUB_API_KEY");
 	if (token.isEmpty())
 	{
-		QFile tokenFile(QCoreApplication::applicationDirPath() + "\\finnhub.token");
-		if (tokenFile.open(QIODevice::ReadOnly | QIODevice::Text))
-		{
-			token = QString::fromUtf8(tokenFile.readAll()).trimmed();
-			tokenFile.close();
-		}
-	}
-	return token;
-}
-
-QStringList MainWindow::megaCapWatchlist()
-{
-	return {
-		"AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META", "TSLA", "BRK.B",
-		"JPM", "V", "MA", "WMT", "JNJ", "PG", "HD", "KO", "PEP", "DIS",
-		"NFLX", "AMD", "INTC", "CSCO", "ORCL", "ADBE", "CRM", "NKE", "MCD",
-		"BA", "XOM", "CVX", "PFE", "MRK", "BAC", "VZ", "IBM", "QCOM",
-		"COST", "TSM", "BABA", "TM", "TXN",
-	};
-}
-
-void MainWindow::setupLiveData()
-{
-	m_finnhub = new FinnhubClient(m_token, this);
-
-	if (m_token.isEmpty())
-	{
 		statusBar()->showMessage(
-			"Live data off — set FINNHUB_API_KEY or add finnhub.token next to the app");
+			"Offline snapshot. Put FINNHUB_API_KEY in .env for live data (see README).");
 		return;
 	}
 
-	connect(m_finnhub, &FinnhubClient::tradeReceived,
+	// Finnhub's free plan has no daily volume or sub-industry: hide the always-empty columns.
+	ui->tableView->setColumnHidden(StockModel::ColVolume, true);
+	ui->tableView->setColumnHidden(StockModel::ColIndustry, true);
+
+	const QStringList watchlist = loadWatchlist();
+
+	auto * finnhub = new FinnhubClient(token, this);
+	connect(finnhub, &FinnhubClient::tradeReceived,
 		m_model, &StockModel::updateLivePrice);
-	connect(m_finnhub, &FinnhubClient::tradeReceived,
+	connect(finnhub, &FinnhubClient::tradeReceived,
 		this, &MainWindow::onTradeReceived);
-	connect(m_finnhub, &FinnhubClient::connected, this, [this]
+	connect(finnhub, &FinnhubClient::connected, this, [this]
 	{
-		statusBar()->showMessage("Live — connected to Finnhub");
+		statusBar()->showMessage("Live: connected to Finnhub");
 	});
-	connect(m_finnhub, &FinnhubClient::errorOccurred, this, [this](const QString & msg)
+	connect(finnhub, &FinnhubClient::disconnected, this, [this]
+	{
+		statusBar()->showMessage("Live: disconnected, reconnecting...");
+	});
+	connect(finnhub, &FinnhubClient::errorOccurred, this, [this](const QString & msg)
 	{
 		statusBar()->showMessage("Live error: " + msg);
 	});
+	finnhub->subscribe(watchlist);
+	finnhub->connectToServer();
 
-	m_finnhub->connectToServer();
-	m_finnhub->subscribe(m_watchlist);
-
-	m_rest = new FinnhubRest(m_token, this);
-	connect(m_rest, &FinnhubRest::recordReady,
+	auto * rest = new FinnhubRest(token, this);
+	connect(rest, &FinnhubRest::recordReady,
 		m_model, &StockModel::addRecord);
-	connect(m_rest, &FinnhubRest::progress, this, [this](int done, int total)
+	connect(rest, &FinnhubRest::errorOccurred, this, [this](const QString & msg)
+	{
+		statusBar()->showMessage("Load error: " + msg, 5000);
+	});
+	connect(rest, &FinnhubRest::progress, this, [this](int done, int total)
 	{
 		ui->stockCountLabel->setText(
 			QString("Loading %1/%2 stocks...").arg(done).arg(total));
 	});
-	connect(m_rest, &FinnhubRest::finished, this, [this]
+	connect(rest, &FinnhubRest::finished, this, [this]
 	{
 		populateFilterCombos();
 		ui->stockCountLabel->setText(
 			QString("%1 stocks loaded").arg(m_model->rowCount()));
+		m_proxy->sort(m_proxy->sortColumn(), m_proxy->sortOrder());
 		updateFilterStatus();
 	});
-
-	m_model->clearAll();
-	m_rest->loadSymbols(m_watchlist);
+	rest->loadSymbols(watchlist);
 }
 
 void MainWindow::setupPredictions()
 {
-	m_predictions = new PredictionClient("ws://127.0.0.1:8765", this);
-	connect(m_predictions, &PredictionClient::predictionReceived,
+	auto * predictions = new PredictionClient("ws://127.0.0.1:8765", this);
+	connect(predictions, &PredictionClient::predictionReceived,
 		m_model, &StockModel::setPrediction);
-	m_predictions->start();
+	connect(predictions, &PredictionClient::connected, this, [this]
+	{
+		m_predictionStatus->setText("Predictions: live");
+	});
+	connect(predictions, &PredictionClient::disconnected, this, [this]
+	{
+		m_predictionStatus->setText("Predictions: offline");
+	});
+	predictions->start();
 }
 
-void MainWindow::onTradeReceived(const QString & symbol, double, double)
+void MainWindow::onTradeReceived(const QString & symbol)
 {
-	QModelIndex current = ui->tableView->currentIndex();
+	const QModelIndex current = ui->tableView->currentIndex();
 	if (!current.isValid()) return;
 
-	QModelIndex src = m_proxy->mapToSource(current);
-	if (m_model->recordAt(src.row()).symbol == symbol)
+	if (m_model->recordAt(m_proxy->mapToSource(current).row()).symbol == symbol)
 		onRowSelected(current, QModelIndex());
 }
 
@@ -259,10 +285,17 @@ void MainWindow::onRowSelected(const QModelIndex & current, const QModelIndex &)
 {
 	if (!current.isValid()) return;
 
-	QModelIndex srcIndex = m_proxy->mapToSource(current);
-	const StockRecord & r = m_model->recordAt(srcIndex.row());
+	const int row = m_proxy->mapToSource(current).row();
+	const StockRecord & r = m_model->recordAt(row);
 
-	QLocale locale(QLocale::English, QLocale::UnitedStates);
+	auto orDash = [](const QString & s)
+	{
+		return s.isEmpty() || s == "-" ? QString::fromUtf8("\xe2\x80\x94") : s;
+	};
+	auto cell = [&](int col)
+	{
+		return orDash(m_model->index(row, col).data().toString());
+	};
 
 	ui->tickerLabel->setText(r.symbol);
 	ui->companyLabel->setText(r.name);
@@ -278,25 +311,12 @@ void MainWindow::onRowSelected(const QModelIndex & current, const QModelIndex &)
 	ui->pctChangeLabel->setStyleSheet(
 		QString("font-size: 14px; font-weight: bold; font-family: Consolas; color: %1;").arg(changeColor));
 
-	ui->volumeValue->setText(locale.toString((qlonglong)r.volume));
-
-	QString mcapStr;
-	if (r.marketCap >= 1e12)
-		mcapStr = QString("$%1T").arg(r.marketCap / 1e12, 0, 'f', 2);
-	else if (r.marketCap >= 1e9)
-		mcapStr = QString("$%1B").arg(r.marketCap / 1e9, 0, 'f', 2);
-	else if (r.marketCap >= 1e6)
-		mcapStr = QString("$%1M").arg(r.marketCap / 1e6, 0, 'f', 2);
-	else if (r.marketCap > 0)
-		mcapStr = QString("$%1K").arg(r.marketCap / 1e3, 0, 'f', 0);
-	else
-		mcapStr = QString::fromUtf8("\xe2\x80\x94");
-	ui->marketCapValue->setText(mcapStr);
-
-	ui->sectorValue->setText(r.sector.isEmpty() ? QString::fromUtf8("\xe2\x80\x94") : r.sector);
-	ui->industryValue->setText(r.industry.isEmpty() ? QString::fromUtf8("\xe2\x80\x94") : r.industry);
-	ui->countryValue->setText(r.country.isEmpty() ? QString::fromUtf8("\xe2\x80\x94") : r.country);
-	ui->ipoValue->setText(r.ipoyear.isEmpty() ? QString::fromUtf8("\xe2\x80\x94") : r.ipoyear);
+	ui->volumeValue->setText(cell(StockModel::ColVolume));
+	ui->marketCapValue->setText(cell(StockModel::ColMarketCap));
+	ui->sectorValue->setText(orDash(r.sector));
+	ui->industryValue->setText(orDash(r.industry));
+	ui->countryValue->setText(orDash(r.country));
+	ui->ipoValue->setText(orDash(r.ipoyear));
 }
 
 void MainWindow::onShowChart()

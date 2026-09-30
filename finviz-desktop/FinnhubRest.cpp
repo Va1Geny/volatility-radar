@@ -8,6 +8,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 
+// Free tier allows 60 calls/minute; one call per ~1s stays under it.
 static constexpr int kTickMs = 1050;
 
 FinnhubRest::FinnhubRest(const QString & apiToken, QObject * parent)
@@ -24,12 +25,6 @@ FinnhubRest::FinnhubRest(const QString & apiToken, QObject * parent)
 
 void FinnhubRest::loadSymbols(const QStringList & symbols)
 {
-	if (m_token.isEmpty())
-	{
-		emit errorOccurred("No Finnhub API token for REST load.");
-		return;
-	}
-
 	m_queue.clear();
 	m_partial.clear();
 	m_remaining.clear();
@@ -38,14 +33,14 @@ void FinnhubRest::loadSymbols(const QStringList & symbols)
 	for (const QString & raw : symbols)
 	{
 		const QString sym = raw.trimmed().toUpper();
-		if (sym.isEmpty()) continue;
+		if (sym.isEmpty() || m_partial.contains(sym)) continue;
 
 		StockRecord r;
 		r.symbol = sym;
 		m_partial.insert(sym, r);
 		m_remaining.insert(sym, 2);
-		enqueue(sym, "quote");
-		enqueue(sym, "profile");
+		m_queue.enqueue({ sym, "quote" });
+		m_queue.enqueue({ sym, "profile" });
 	}
 
 	m_total = m_partial.size();
@@ -57,11 +52,6 @@ void FinnhubRest::loadSymbols(const QStringList & symbols)
 
 	dispatchNext();
 	m_timer->start();
-}
-
-void FinnhubRest::enqueue(const QString & symbol, const QString & kind)
-{
-	m_queue.enqueue(qMakePair(symbol, kind));
 }
 
 void FinnhubRest::dispatchNext()
@@ -81,10 +71,11 @@ void FinnhubRest::dispatchNext()
 		: "https://finnhub.io/api/v1/stock/profile2");
 	QUrlQuery query;
 	query.addQueryItem("symbol", symbol);
-	query.addQueryItem("token", m_token);
 	url.setQuery(query);
 
+	// Token goes in a header, not the URL: Qt puts the full URL into error strings.
 	QNetworkRequest req(url);
+	req.setRawHeader("X-Finnhub-Token", m_token.toUtf8());
 	QNetworkReply * reply = m_nam->get(req);
 	reply->setProperty("symbol", symbol);
 	reply->setProperty("kind", kind);
@@ -99,44 +90,62 @@ void FinnhubRest::onReplyFinished(QNetworkReply * reply)
 	if (symbol.isEmpty() || !m_partial.contains(symbol))
 		return;
 
-	if (reply->error() == QNetworkReply::NoError)
+	// Rate limited: put the job back in line instead of losing the stock.
+	// ponytail: retries forever at the tick rate; add a retry cap if Finnhub ever 429s persistently.
+	if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() == 429)
 	{
-		const QJsonObject obj =
-			QJsonDocument::fromJson(reply->readAll()).object();
-		StockRecord & r = m_partial[symbol];
+		m_queue.enqueue({ symbol, kind });
+		if (!m_timer->isActive()) m_timer->start();
+		return;
+	}
 
-		if (kind == "quote")
-		{
-			r.lastSale = obj["c"].toDouble();
-			r.netChange = obj["d"].toDouble();
-			r.pctChange = obj["dp"].toDouble();
-			r.previousClose = obj["pc"].toDouble();
-		}
-		else
-		{
-			r.name = obj["name"].toString();
-			r.country = obj["country"].toString();
-			r.sector = obj["finnhubIndustry"].toString();
-			r.industry = obj["finnhubIndustry"].toString();
-			r.marketCap = obj["marketCapitalization"].toDouble() * 1e6;
-			const QString ipo = obj["ipo"].toString();
-			if (ipo.size() >= 4) r.ipoyear = ipo.left(4);
-		}
+	const QJsonObject obj = QJsonDocument::fromJson(reply->readAll()).object();
+	if (reply->error() != QNetworkReply::NoError)
+	{
+		emit errorOccurred(QString("%1 %2: %3").arg(symbol, kind, reply->errorString()));
+	}
+	else if (obj.contains("error"))
+	{
+		emit errorOccurred(QString("%1 %2: %3").arg(symbol, kind, obj["error"].toString()));
+	}
+	else if (kind == "quote")
+	{
+		StockRecord & r = m_partial[symbol];
+		r.lastSale = obj["c"].toDouble();
+		r.netChange = obj["d"].toDouble();
+		r.pctChange = obj["dp"].toDouble();
+		r.previousClose = obj["pc"].toDouble();
 	}
 	else
 	{
-		emit errorOccurred(QString("%1 %2: %3")
-			.arg(symbol, kind, reply->errorString()));
+		// profile2 has one coarse classification (e.g. "Technology"); it goes in Sector.
+		StockRecord & r = m_partial[symbol];
+		r.name = obj["name"].toString();
+		r.country = obj["country"].toString();
+		r.sector = obj["finnhubIndustry"].toString();
+		// Reported in the home currency (TSM in TWD, TM in JPY). No free FX rates: show "-" rather than a wrong number.
+		if (obj["currency"].toString() == "USD")
+			r.marketCap = obj["marketCapitalization"].toDouble() * 1e6;
+		const QString ipo = obj["ipo"].toString();
+		if (ipo.size() >= 4) r.ipoyear = ipo.left(4);
 	}
 
-	if (--m_remaining[symbol] <= 0)
+	if (--m_remaining[symbol] > 0)
+		return;
+
+	StockRecord r = m_partial.take(symbol);
+	m_remaining.remove(symbol);
+	// No price means the quote failed or Finnhub doesn't know the symbol: skip it, don't show $0.00.
+	if (r.lastSale > 0.0)
 	{
-		StockRecord r = m_partial.take(symbol);
-		m_remaining.remove(symbol);
 		if (r.name.isEmpty()) r.name = symbol;
 		emit recordReady(r);
-		emit progress(++m_done, m_total);
-		if (m_done >= m_total)
-			emit finished();
 	}
+	else
+	{
+		emit errorOccurred(QString("%1: no quote, skipped").arg(symbol));
+	}
+	emit progress(++m_done, m_total);
+	if (m_done >= m_total)
+		emit finished();
 }

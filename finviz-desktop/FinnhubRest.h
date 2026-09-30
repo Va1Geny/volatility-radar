@@ -4,7 +4,7 @@
 #include <QQueue>
 #include <QHash>
 #include <QPair>
-#include "stockModel.h"
+#include "StockModel.h"
 
 class QNetworkAccessManager;
 class QNetworkReply;
@@ -29,8 +29,6 @@ private slots:
 	void onReplyFinished(QNetworkReply * reply);
 
 private:
-	void enqueue(const QString & symbol, const QString & kind);
-
 	QNetworkAccessManager * m_nam;
 	QTimer * m_timer;
 	QString m_token;

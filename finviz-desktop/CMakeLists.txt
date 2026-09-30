@@ -43,28 +43,18 @@ target_link_libraries(finviz-desktop
         Qt6::Network
 )
 
-add_custom_command(TARGET finviz-desktop POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_CURRENT_SOURCE_DIR}/stocks.csv"
-        "$<TARGET_FILE_DIR:finviz-desktop>/stocks.csv"
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_CURRENT_SOURCE_DIR}/style.qss"
-        "$<TARGET_FILE_DIR:finviz-desktop>/style.qss"
-)
-
-# Copy the Finnhub token next to the binary if present (gitignored, optional).
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/finnhub.token")
-    add_custom_command(TARGET finviz-desktop POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${CMAKE_CURRENT_SOURCE_DIR}/finnhub.token"
-            "$<TARGET_FILE_DIR:finviz-desktop>/finnhub.token")
-endif()
+# Data files (.env, watchlist.txt, stocks.json, style.qss) are read from the source tree
+# if it exists, else from next to the exe (installed copies below).
+target_compile_definitions(finviz-desktop PRIVATE
+    FINVIZ_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 
 install(TARGETS finviz-desktop
     BUNDLE DESTINATION .
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
+install(FILES stocks.json style.qss watchlist.txt .env.example
+    DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 qt_generate_deploy_app_script(
     TARGET finviz-desktop

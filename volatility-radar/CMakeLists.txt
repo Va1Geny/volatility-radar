@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.19)
+cmake_minimum_required(VERSION 3.22)
 project(volatility-radar LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -9,7 +9,7 @@ add_compile_options(
     $<$<CXX_COMPILER_ID:MSVC>:/Zc:__cplusplus>
 )
 
-find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets Charts WebSockets Network)
+find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets Charts WebSockets Network Test)
 
 qt_standard_project_setup()
 
@@ -61,6 +61,25 @@ install(TARGETS volatility-radar
 )
 install(FILES stocks.json style.qss watchlist.txt .env.example
     DESTINATION ${CMAKE_INSTALL_BINDIR})
+# The analyzer ships with its trained model; users create analyzer/.venv to enable predictions.
+install(DIRECTORY analyzer DESTINATION ${CMAKE_INSTALL_BINDIR}
+    PATTERN ".venv" EXCLUDE
+    PATTERN "cache" EXCLUDE
+    PATTERN "__pycache__" EXCLUDE
+    PATTERN "*.log" EXCLUDE
+    PATTERN "*.log.err" EXCLUDE
+    PATTERN "direction_lstm.keras" EXCLUDE)
+
+# Unit tests: `ctest --test-dir <build dir>` (no window needed).
+enable_testing()
+qt_add_executable(test_stockmodel tests/test_stockmodel.cpp StockModel.cpp StockFilterProxy.cpp)
+target_include_directories(test_stockmodel PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(test_stockmodel PRIVATE Qt6::Core Qt6::Test)
+add_test(NAME test_stockmodel COMMAND test_stockmodel)
+if(WIN32)  # let ctest find the Qt DLLs
+    set_tests_properties(test_stockmodel PROPERTIES
+        ENVIRONMENT_MODIFICATION "PATH=path_list_prepend:$<TARGET_FILE_DIR:Qt6::Core>")
+endif()
 
 qt_generate_deploy_app_script(
     TARGET volatility-radar

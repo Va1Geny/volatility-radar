@@ -1,0 +1,40 @@
+# Push a tag like v1.0.0 to build the Windows app and attach it to a GitHub Release.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.8.*'
+          modules: 'qtcharts qtwebsockets'
+          cache: true
+
+      - name: Build
+        run: |
+          cmake -S volatility-radar -B build -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --config Release --parallel
+
+      - name: Test
+        run: ctest --test-dir build -C Release --output-on-failure
+
+      # The install step copies the Qt DLLs (windeployqt), data files and the analyzer.
+      - name: Package
+        run: |
+          cmake --install build --config Release --prefix VolatilityRadar
+          Compress-Archive -Path VolatilityRadar -DestinationPath VolatilityRadar-${{ github.ref_name }}-windows-x64.zip
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: VolatilityRadar-*.zip
+          generate_release_notes: true

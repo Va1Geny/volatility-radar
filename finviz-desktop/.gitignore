@@ -92,7 +92,10 @@ finnhub.token
 __pycache__/
 .venv/
 analyzer/cache/
-analyzer/artifacts/
+analyzer/artifacts/*
+# Ship the trained model so predictions work right after setup.
+!analyzer/artifacts/bigmove_cnn.keras
+!analyzer/artifacts/scaler.json
 *.log
 *.log.err
 

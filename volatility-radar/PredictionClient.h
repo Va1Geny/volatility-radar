@@ -13,7 +13,8 @@ public:
 	void start();
 
 signals:
-	void predictionReceived(const QString & symbol, double bigMoveProb);
+	// closes: recent daily closes, oldest first (empty if the server sent none).
+	void predictionReceived(const QString & symbol, double bigMoveProb, const QList<double> & closes);
 	void connected();
 	void disconnected();
 

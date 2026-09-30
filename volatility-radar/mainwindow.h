@@ -6,6 +6,7 @@
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
+class QChart;
 class QChartView;
 class QLabel;
 QT_END_NAMESPACE
@@ -24,6 +25,10 @@ private slots:
 	void onResetFilters();
 	void onSearchTextChanged(const QString & text);
 	void onTradeReceived(const QString & symbol);
+	void onPrediction(const QString & symbol, double bigMoveProb, const QList<double> & closes);
+
+protected:
+	void closeEvent(QCloseEvent * event) override;
 
 private:
 	void setupTheme();
@@ -32,6 +37,11 @@ private:
 	void createEmbeddedChart();
 	void setupLiveData(const QString & token);
 	void setupPredictions();
+	void startPredictionServer();
+	void updateDetails(int sourceRow);
+	void showPriceChart(const QString & symbol);
+	void setChart(QChart * chart);
+	QString currentSymbol() const;
 
 	Ui::MainWindow * ui;
 	StockModel * m_model;
@@ -39,4 +49,5 @@ private:
 	StockDelegate * m_delegate;
 	QChartView * m_chartView = nullptr;
 	QLabel * m_predictionStatus = nullptr;
+	QHash<QString, QList<double>> m_history;  // recent daily closes by symbol, from the analyzer
 };

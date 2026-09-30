@@ -171,6 +171,13 @@ QVariant StockModel::data(const QModelIndex & index, int role) const
 		}
 	}
 
+	if (role == Qt::ToolTipRole && index.column() == ColBigMove && bigMoveProb >= 0.0)
+	{
+		return QString("%1% chance of an unusually large move (up or down) within 5 trading days.\n"
+			"A typical stock scores about %2%.")
+			.arg(bigMoveProb * 100.0, 0, 'f', 0).arg(BigMoveBaseRate * 100.0, 0, 'f', 0);
+	}
+
 	if (role != Qt::DisplayRole)
 	{
 		return {};
@@ -211,6 +218,13 @@ QVariant StockModel::data(const QModelIndex & index, int role) const
 QVariant StockModel::headerData(int section, Qt::Orientation orientation, int role)
 const
 {
+	if (role == Qt::ToolTipRole && orientation == Qt::Horizontal && section == ColBigMove)
+	{
+		return QString("Model's probability of an unusually large move (up or down) within 5 trading days.\n"
+			"Typical: about %1%. Amber = elevated, red = about twice as likely as usual.")
+			.arg(BigMoveBaseRate * 100.0, 0, 'f', 0);
+	}
+
 	if (role != Qt::DisplayRole)
 	{
 		return {};

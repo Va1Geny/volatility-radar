@@ -1,4 +1,5 @@
 #include "PredictionClient.h"
+#include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QUrl>
@@ -62,5 +63,8 @@ void PredictionClient::onTextMessageReceived(const QString & message)
 	if (symbol.isEmpty() || !obj.contains("prob_bigmove"))
 		return;
 
-	emit predictionReceived(symbol, obj["prob_bigmove"].toDouble());
+	QList<double> closes;
+	for (const QJsonValue & v : obj["closes"].toArray())
+		closes << v.toDouble();
+	emit predictionReceived(symbol, obj["prob_bigmove"].toDouble(), closes);
 }

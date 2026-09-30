@@ -7,6 +7,8 @@
 int main(int argc, char * argv[])
 {
 	QApplication a(argc, argv);
+	a.setOrganizationName("Va1Geny");          // QSettings location
+	a.setApplicationName("Volatility Radar");
 	a.setWindowIcon(QIcon(":/resources/app.png"));
 
 	a.setStyle(QStyleFactory::create("Fusion"));

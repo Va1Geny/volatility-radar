@@ -38,6 +38,10 @@ public:
 		ColCount
 	};
 
+	// Share of stocks that make a "big move" in a typical week (train prints base_rate).
+	// Keep in sync with the alert levels in StockDelegate.h and analyzer config.py.
+	static constexpr double BigMoveBaseRate = 0.16;
+
 	explicit StockModel(QObject * parent = nullptr);
 
 	void loadFromJson(const QString & path);

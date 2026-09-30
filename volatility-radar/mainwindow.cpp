@@ -8,11 +8,15 @@
 #include <QBarSet>
 #include <QChart>
 #include <QChartView>
+#include <QCloseEvent>
 #include <QCoreApplication>
 #include <QFile>
 #include <QFileInfo>
 #include <QLabel>
+#include <QLineSeries>
 #include <QMap>
+#include <QProcess>
+#include <QSettings>
 #include <QStatusBar>
 #include <QValueAxis>
 #include <QVBoxLayout>
@@ -60,6 +64,29 @@ static QStringList loadWatchlist()
 	return symbols;
 }
 
+// Empty chart in the app's dark theme.
+static QChart * themedChart(const QString & title)
+{
+	QChart * chart = new QChart();
+	chart->setTitle(title);
+	chart->legend()->setVisible(false);
+	chart->setBackgroundBrush(QBrush(QColor("#1E222D")));
+	chart->setPlotAreaBackgroundBrush(QBrush(QColor("#131722")));
+	chart->setPlotAreaBackgroundVisible(true);
+	chart->setTitleBrush(QBrush(QColor("#D1D4DC")));
+	chart->setTitleFont(QFont("Segoe UI", 10, QFont::Bold));
+	return chart;
+}
+
+// Gray, non-bold title for "nothing to show yet" messages.
+static QChart * placeholderChart(const QString & message)
+{
+	QChart * chart = themedChart(message);
+	chart->setTitleBrush(QBrush(QColor("#787B86")));
+	chart->setTitleFont(QFont("Segoe UI", 10));
+	return chart;
+}
+
 MainWindow::MainWindow(QWidget * parent)
 	: QMainWindow(parent)
 	, ui(new Ui::MainWindow)
@@ -90,7 +117,6 @@ MainWindow::MainWindow(QWidget * parent)
 	ui->tableView->verticalHeader()->setDefaultSectionSize(32);
 	ui->tableView->setShowGrid(true);
 	ui->tableView->setSortingEnabled(true);
-	ui->tableView->sortByColumn(StockModel::ColSymbol, Qt::AscendingOrder);
 	ui->tableView->setAlternatingRowColors(true);
 
 	ui->tableView->setColumnWidth(StockModel::ColSymbol, 80);
@@ -104,6 +130,13 @@ MainWindow::MainWindow(QWidget * parent)
 	ui->tableView->setColumnWidth(StockModel::ColBigMove, 90);
 
 	ui->splitter->setSizes({ 240, 800, 320 });
+
+	// Window size, panel layout and sort order from the last session (saved in closeEvent).
+	QSettings settings;
+	restoreGeometry(settings.value("geometry").toByteArray());
+	ui->splitter->restoreState(settings.value("splitter").toByteArray());
+	ui->tableView->sortByColumn(settings.value("sortColumn", StockModel::ColSymbol).toInt(),
+		Qt::SortOrder(settings.value("sortOrder", Qt::AscendingOrder).toInt()));
 
 	populateFilterCombos();
 
@@ -139,6 +172,16 @@ MainWindow::MainWindow(QWidget * parent)
 MainWindow::~MainWindow()
 {
 	delete ui;
+}
+
+void MainWindow::closeEvent(QCloseEvent * event)
+{
+	QSettings settings;
+	settings.setValue("geometry", saveGeometry());
+	settings.setValue("splitter", ui->splitter->saveState());
+	settings.setValue("sortColumn", m_proxy->sortColumn());
+	settings.setValue("sortOrder", int(m_proxy->sortOrder()));
+	QMainWindow::closeEvent(event);
 }
 
 void MainWindow::setupTheme()
@@ -179,19 +222,8 @@ void MainWindow::updateFilterStatus()
 
 void MainWindow::createEmbeddedChart()
 {
-	QChart * chart = new QChart();
-	chart->setTitle("Select 'Show Sector Chart' to view distribution");
-	chart->legend()->setVisible(false);
-	chart->setAnimationOptions(QChart::NoAnimation);
-
-	chart->setBackgroundBrush(QBrush(QColor("#1E222D")));
-	chart->setPlotAreaBackgroundBrush(QBrush(QColor("#131722")));
-	chart->setPlotAreaBackgroundVisible(true);
-	chart->setTitleBrush(QBrush(QColor("#787B86")));
-	QFont titleFont("Segoe UI", 10);
-	chart->setTitleFont(titleFont);
-
-	m_chartView = new QChartView(chart);
+	m_chartView = new QChartView(
+		placeholderChart("Select a stock for its price history,\nor use 'Show Sector Chart'"));
 	m_chartView->setRenderHint(QPainter::Antialiasing);
 	m_chartView->setStyleSheet("background: transparent; border: none;");
 
@@ -258,9 +290,13 @@ void MainWindow::setupLiveData(const QString & token)
 
 void MainWindow::setupPredictions()
 {
+	startPredictionServer();
+
 	auto * predictions = new PredictionClient("ws://127.0.0.1:8765", this);
 	connect(predictions, &PredictionClient::predictionReceived,
 		m_model, &StockModel::setPrediction);
+	connect(predictions, &PredictionClient::predictionReceived,
+		this, &MainWindow::onPrediction);
 	connect(predictions, &PredictionClient::connected, this, [this]
 	{
 		m_predictionStatus->setText("Predictions: live");
@@ -272,20 +308,94 @@ void MainWindow::setupPredictions()
 	predictions->start();
 }
 
-void MainWindow::onTradeReceived(const QString & symbol)
+// Launch the analyzer's prediction feed in the background if it is set up
+// (venv + trained model). If another copy already runs, ours fails to bind and exits.
+// The QProcess is owned by the window, so it is stopped when the app closes.
+void MainWindow::startPredictionServer()
+{
+	const QString analyzer = appFile("analyzer");
+#ifdef Q_OS_WIN
+	const QString python = analyzer + "/.venv/Scripts/python.exe";
+#else
+	const QString python = analyzer + "/.venv/bin/python";
+#endif
+	if (!QFileInfo::exists(python) || !QFileInfo::exists(analyzer + "/artifacts/bigmove_cnn.keras"))
+		return;
+
+	auto * server = new QProcess(this);
+	server->setWorkingDirectory(analyzer);
+	server->setStandardOutputFile(QProcess::nullDevice());
+	server->setStandardErrorFile(QProcess::nullDevice());
+	server->start(python, { "-m", "predictor.serve" });
+	m_predictionStatus->setText("Predictions: starting...");
+}
+
+QString MainWindow::currentSymbol() const
 {
 	const QModelIndex current = ui->tableView->currentIndex();
-	if (!current.isValid()) return;
+	return current.isValid() ? m_model->recordAt(m_proxy->mapToSource(current).row()).symbol : QString();
+}
 
-	if (m_model->recordAt(m_proxy->mapToSource(current).row()).symbol == symbol)
-		onRowSelected(current, QModelIndex());
+void MainWindow::onPrediction(const QString & symbol, double, const QList<double> & closes)
+{
+	if (closes.isEmpty()) return;
+	m_history.insert(symbol, closes);
+	if (symbol == currentSymbol())
+		showPriceChart(symbol);
+}
+
+void MainWindow::onTradeReceived(const QString & symbol)
+{
+	if (symbol == currentSymbol())
+		updateDetails(m_proxy->mapToSource(ui->tableView->currentIndex()).row());
 }
 
 void MainWindow::onRowSelected(const QModelIndex & current, const QModelIndex &)
 {
 	if (!current.isValid()) return;
-
 	const int row = m_proxy->mapToSource(current).row();
+	updateDetails(row);
+	showPriceChart(m_model->recordAt(row).symbol);
+}
+
+void MainWindow::setChart(QChart * chart)
+{
+	QChart * old = m_chartView->chart();
+	m_chartView->setChart(chart);
+	delete old;
+}
+
+void MainWindow::showPriceChart(const QString & symbol)
+{
+	const QList<double> closes = m_history.value(symbol);
+	if (closes.size() < 2)
+	{
+		setChart(placeholderChart(symbol + ": no price history yet.\n"
+			"It arrives with the analyzer's predictions (watchlist stocks only)."));
+		return;
+	}
+
+	auto * series = new QLineSeries();
+	for (int i = 0; i < closes.size(); ++i)
+		series->append(i, closes[i]);
+	series->setPen(QPen(QColor(closes.last() >= closes.first() ? "#26A69A" : "#EF5350"), 2));
+
+	QChart * chart = themedChart(QString("%1 - last %2 trading days").arg(symbol).arg(closes.size()));
+	chart->addSeries(series);
+	chart->createDefaultAxes();
+	chart->axes(Qt::Horizontal).first()->hide();  // x is just the bar index
+
+	auto * axisY = static_cast<QValueAxis *>(chart->axes(Qt::Vertical).first());
+	axisY->setLabelFormat("$%.0f");
+	axisY->setLabelsColor(QColor("#787B86"));
+	axisY->setGridLineColor(QColor("#2A2E39"));
+	axisY->setLabelsFont(QFont("Segoe UI", 8));
+
+	setChart(chart);
+}
+
+void MainWindow::updateDetails(int row)
+{
 	const StockRecord & r = m_model->recordAt(row);
 
 	auto orDash = [](const QString & s)
@@ -361,17 +471,9 @@ void MainWindow::onShowChart()
 	series->append(set);
 	series->setBarWidth(0.7);
 
-	QChart * chart = new QChart();
+	QChart * chart = themedChart("Stocks by Sector (Top 10)");
 	chart->addSeries(series);
-	chart->setTitle("Stocks by Sector (Top 10)");
 	chart->setAnimationOptions(QChart::SeriesAnimations);
-
-	chart->setBackgroundBrush(QBrush(QColor("#1E222D")));
-	chart->setPlotAreaBackgroundBrush(QBrush(QColor("#131722")));
-	chart->setPlotAreaBackgroundVisible(true);
-	chart->setTitleBrush(QBrush(QColor("#D1D4DC")));
-	QFont titleFont("Segoe UI", 10, QFont::Bold);
-	chart->setTitleFont(titleFont);
 
 	QBarCategoryAxis * axisX = new QBarCategoryAxis();
 	axisX->append(categories);
@@ -392,14 +494,7 @@ void MainWindow::onShowChart()
 	chart->addAxis(axisY, Qt::AlignLeft);
 	series->attachAxis(axisY);
 
-	chart->legend()->setVisible(false);
-
-	if (m_chartView)
-	{
-		QChart * oldChart = m_chartView->chart();
-		m_chartView->setChart(chart);
-		delete oldChart;
-	}
+	setChart(chart);
 }
 
 void MainWindow::onApplyFilters()

@@ -226,28 +226,6 @@ QSplitter::handle:hover {
 	background-color: #2962FF;
 }
 
-QMenuBar {
-	background-color: #131722;
-	color: #D1D4DC;
-	border-bottom: 1px solid #2A2E39;
-	padding: 2px 0;
-}
-
-QMenuBar::item {
-	background-color: transparent;
-	padding: 6px 12px;
-	border-radius: 4px;
-}
-
-QMenuBar::item:selected {
-	background-color: #2A2E39;
-}
-
-QMenuBar::item:pressed {
-	background-color: #2962FF;
-	color: #FFFFFF;
-}
-
 QMenu {
 	background-color: #1E222D;
 	color: #D1D4DC;

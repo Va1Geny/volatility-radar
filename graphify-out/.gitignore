@@ -3,5 +3,7 @@
 .graphify_root
 cache/
 cost.json
+# Interactive viewer, regenerated locally on every rebuild; not published.
+graph.html
 # Automatic backups made before a rebuild replaces a curated graph.
 [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/

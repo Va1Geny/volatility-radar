@@ -1,1 +1,3 @@
 graphify-out/graph.json merge=graphify
+# Generated knowledge graph: keep it out of GitHub's language stats and collapse it in diffs.
+graphify-out/** linguist-generated

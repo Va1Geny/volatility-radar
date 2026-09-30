@@ -195,7 +195,7 @@ volatility-radar/
   Codex and Cursor read it directly; Claude Code loads it through [CLAUDE.md](CLAUDE.md).
 - **[graphify-out/](graphify-out/)** is a knowledge graph of the codebase
   ([graphify](https://github.com/safishamsi/graphify)). Agents query it instead of grepping.
-  Open `graphify-out/graph.html` in a browser to explore it yourself.
+  To explore it interactively, run `graphify export html` and open the generated `graphify-out/graph.html`.
 
   ![Knowledge graph of the codebase: 372 nodes in 14 communities, one color per module](docs/knowledge-graph.png)
 - **Keeping the graph current:** install graphify (`uv tool install graphifyy`) and run `graphify hook install` once per clone.

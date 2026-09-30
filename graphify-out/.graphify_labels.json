@@ -1,0 +1,16 @@
+{
+  "0": "StockModel",
+  "1": "dataset.py",
+  "2": "FinnhubClient",
+  "3": "FinnhubRest",
+  "4": "mainwindow.cpp",
+  "5": "build_features",
+  "6": "StockDelegate",
+  "7": "predictor/config.py (all settings)",
+  "8": "PredictionClient",
+  "9": "StockFilterProxy",
+  "10": "mainwindow.h",
+  "11": "__init__.py",
+  "12": "volatility-radar",
+  "13": "main.cpp"
+}

@@ -189,6 +189,16 @@ volatility-radar/
 | App won't start: missing `Qt6*.dll` | Run it from Qt Creator, or use `cmake --install build --prefix dist`, which copies the DLLs. |
 | `No model at …` from the analyzer | Train first: `python -m predictor.train`. |
 
+## Contributing (people and AI agents)
+
+- **[AGENTS.md](AGENTS.md)** has the build and test commands, the invariants that must stay in sync, and the house rules.
+  Codex and Cursor read it directly; Claude Code loads it through [CLAUDE.md](CLAUDE.md).
+- **[graphify-out/](graphify-out/)** is a knowledge graph of the codebase
+  ([graphify](https://github.com/safishamsi/graphify)). Agents query it instead of grepping.
+  Open `graphify-out/graph.html` in a browser to explore it yourself.
+- **Keeping the graph current:** install graphify (`uv tool install graphifyy`) and run `graphify hook install` once per clone.
+  Git then rebuilds the graph after each commit, and the Claude Code and Cursor hooks refresh it after each edit.
+
 ## License and credits
 
 Created by **Valentyn Sarkisov** ([@Va1Geny](https://github.com/Va1Geny)).

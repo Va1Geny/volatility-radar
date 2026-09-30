@@ -1,0 +1,206 @@
+{
+  "volatility-radar/FinnhubClient.cpp": {
+    "mtime": 1790788460.1289337,
+    "seen": 1790803961.846536,
+    "ast_hash": "3391496f96a84eedbc4fd99e5728dc3f",
+    "semantic_hash": "3391496f96a84eedbc4fd99e5728dc3f"
+  },
+  "volatility-radar/FinnhubClient.h": {
+    "mtime": 1790788460.1615863,
+    "seen": 1790803961.8465414,
+    "ast_hash": "7f73c266fbb465f734ff05b300fc7fa1",
+    "semantic_hash": "7f73c266fbb465f734ff05b300fc7fa1"
+  },
+  "volatility-radar/FinnhubRest.cpp": {
+    "mtime": 1790801184.876572,
+    "seen": 1790803961.8465436,
+    "ast_hash": "3f5b46808cba2db0debb4aa8ac9a7d24",
+    "semantic_hash": "3f5b46808cba2db0debb4aa8ac9a7d24"
+  },
+  "volatility-radar/FinnhubRest.h": {
+    "mtime": 1790787761.219121,
+    "seen": 1790803961.8465452,
+    "ast_hash": "e22ba45bccf7d4234035fea98b1f2bb2",
+    "semantic_hash": "e22ba45bccf7d4234035fea98b1f2bb2"
+  },
+  "volatility-radar/PredictionClient.cpp": {
+    "mtime": 1790787773.7904742,
+    "seen": 1790803961.8465464,
+    "ast_hash": "bbdabe6f045880801374948175c919ee",
+    "semantic_hash": "bbdabe6f045880801374948175c919ee"
+  },
+  "volatility-radar/PredictionClient.h": {
+    "mtime": 1790787800.117997,
+    "seen": 1790803961.8465474,
+    "ast_hash": "da3bb8fa6190b1caeec51e1a1d4f6fec",
+    "semantic_hash": "da3bb8fa6190b1caeec51e1a1d4f6fec"
+  },
+  "volatility-radar/StockDelegate.cpp": {
+    "mtime": 1790787722.4750562,
+    "seen": 1790803961.8465486,
+    "ast_hash": "64366a7e7c1bf80ffcf8da114c61ff54",
+    "semantic_hash": "64366a7e7c1bf80ffcf8da114c61ff54"
+  },
+  "volatility-radar/StockDelegate.h": {
+    "mtime": 1790787714.3469331,
+    "seen": 1790803961.8465493,
+    "ast_hash": "dad057d49bc146519c6b41338fcf6a87",
+    "semantic_hash": "dad057d49bc146519c6b41338fcf6a87"
+  },
+  "volatility-radar/StockFilterProxy.cpp": {
+    "mtime": 1790787697.1984072,
+    "seen": 1790803961.8465505,
+    "ast_hash": "5c4b96af896b8a0f2bcb3f7510919ff0",
+    "semantic_hash": "5c4b96af896b8a0f2bcb3f7510919ff0"
+  },
+  "volatility-radar/StockFilterProxy.h": {
+    "mtime": 1781798960.3163266,
+    "seen": 1790803961.8465512,
+    "ast_hash": "4134c09c48d6af3b27aa6682972d9e45",
+    "semantic_hash": "4134c09c48d6af3b27aa6682972d9e45"
+  },
+  "volatility-radar/StockModel.cpp": {
+    "mtime": 1790801912.1394901,
+    "seen": 1790803961.8465521,
+    "ast_hash": "3f445a5d4bef68cf1d318075a67fbc2f",
+    "semantic_hash": "3f445a5d4bef68cf1d318075a67fbc2f"
+  },
+  "volatility-radar/StockModel.h": {
+    "mtime": 1790801911.6007223,
+    "seen": 1790803961.846553,
+    "ast_hash": "ec9fcf36363fe068485bb50f29824ba6",
+    "semantic_hash": "ec9fcf36363fe068485bb50f29824ba6"
+  },
+  "volatility-radar/analyzer/predictor/__init__.py": {
+    "mtime": 1790788193.1015625,
+    "seen": 1790803961.846554,
+    "ast_hash": "c556af918bd623b2761c315a69f665e4",
+    "semantic_hash": "c556af918bd623b2761c315a69f665e4"
+  },
+  "volatility-radar/analyzer/predictor/config.py": {
+    "mtime": 1790788159.185283,
+    "seen": 1790803961.846555,
+    "ast_hash": "a2dc003f34a7af5e744cc04222b97ea3",
+    "semantic_hash": "a2dc003f34a7af5e744cc04222b97ea3"
+  },
+  "volatility-radar/analyzer/predictor/data_loader.py": {
+    "mtime": 1790788182.145862,
+    "seen": 1790803961.8465557,
+    "ast_hash": "b2315e468ca4bc42eda8dcae740b7990",
+    "semantic_hash": "b2315e468ca4bc42eda8dcae740b7990"
+  },
+  "volatility-radar/analyzer/predictor/dataset.py": {
+    "mtime": 1790788159.3336403,
+    "seen": 1790803961.8465567,
+    "ast_hash": "53578a7384466b8b0a65c279eaf28d7e",
+    "semantic_hash": "53578a7384466b8b0a65c279eaf28d7e"
+  },
+  "volatility-radar/analyzer/predictor/features.py": {
+    "mtime": 1790788159.244465,
+    "seen": 1790803961.8465574,
+    "ast_hash": "409b9d638be628a2943bd4ee3ea223a3",
+    "semantic_hash": "409b9d638be628a2943bd4ee3ea223a3"
+  },
+  "volatility-radar/analyzer/predictor/model.py": {
+    "mtime": 1790801214.72524,
+    "seen": 1790803961.846558,
+    "ast_hash": "7cb0c5b7030859888c8fb3b1b1233ac5",
+    "semantic_hash": "7cb0c5b7030859888c8fb3b1b1233ac5"
+  },
+  "volatility-radar/analyzer/predictor/predict.py": {
+    "mtime": 1790788182.0709836,
+    "seen": 1790803961.8465593,
+    "ast_hash": "e8d51d54a55c7a025e17b54bed8459e1",
+    "semantic_hash": "e8d51d54a55c7a025e17b54bed8459e1"
+  },
+  "volatility-radar/analyzer/predictor/serve.py": {
+    "mtime": 1790788193.0635085,
+    "seen": 1790803961.84656,
+    "ast_hash": "cb19f3d7bfdfb217ff64581754a7b464",
+    "semantic_hash": "cb19f3d7bfdfb217ff64581754a7b464"
+  },
+  "volatility-radar/analyzer/predictor/train.py": {
+    "mtime": 1790788182.028,
+    "seen": 1790803961.8465607,
+    "ast_hash": "0ad80dbb1538e8c773e3ce12c288868b",
+    "semantic_hash": "0ad80dbb1538e8c773e3ce12c288868b"
+  },
+  "volatility-radar/analyzer/test_labels.py": {
+    "mtime": 1790788523.182983,
+    "seen": 1790803961.846562,
+    "ast_hash": "2b4134dbfc6744912724152b9c8a5c0e",
+    "semantic_hash": "2b4134dbfc6744912724152b9c8a5c0e"
+  },
+  "volatility-radar/main.cpp": {
+    "mtime": 1790803698.215571,
+    "seen": 1790803961.8465633,
+    "ast_hash": "31f2a124c7a463fa886f0b0852a0d611",
+    "semantic_hash": "31f2a124c7a463fa886f0b0852a0d611"
+  },
+  "volatility-radar/mainwindow.cpp": {
+    "mtime": 1790803036.1036963,
+    "seen": 1790803961.846564,
+    "ast_hash": "9cc54ac5c95bd0920c48c39a2c7d0ecd",
+    "semantic_hash": "9cc54ac5c95bd0920c48c39a2c7d0ecd"
+  },
+  "volatility-radar/mainwindow.h": {
+    "mtime": 1790787805.8993514,
+    "seen": 1790803961.846565,
+    "ast_hash": "01861b2144fb0d1eebe0046e4ef4fe97",
+    "semantic_hash": "01861b2144fb0d1eebe0046e4ef4fe97"
+  },
+  "README.md": {
+    "mtime": 1790804021.136591,
+    "seen": 1790804049.6855168,
+    "ast_hash": "59233630184657a9ca60a8e3393b04c6",
+    "semantic_hash": ""
+  },
+  "volatility-radar/CMakeLists.txt": {
+    "mtime": 1790803698.1166086,
+    "seen": 1790803961.8465667,
+    "ast_hash": "c35040218efc1678f973690147e76eec",
+    "semantic_hash": "c35040218efc1678f973690147e76eec"
+  },
+  "volatility-radar/analyzer/MODEL_MANUAL.txt": {
+    "mtime": 1790803036.1036963,
+    "seen": 1790803961.8465676,
+    "ast_hash": "225c7502456b2403fcd76562ff0f8f48",
+    "semantic_hash": "225c7502456b2403fcd76562ff0f8f48"
+  },
+  "volatility-radar/analyzer/requirements.txt": {
+    "mtime": 1782672390.6965878,
+    "seen": 1790803961.8465683,
+    "ast_hash": "69fb1d169a39d33832a1e24237e42849",
+    "semantic_hash": "69fb1d169a39d33832a1e24237e42849"
+  },
+  "volatility-radar/watchlist.txt": {
+    "mtime": 1790787881.2862415,
+    "seen": 1790803961.8465695,
+    "ast_hash": "1822e4794f9cc629da73dc5dc90f6cf2",
+    "semantic_hash": "1822e4794f9cc629da73dc5dc90f6cf2"
+  },
+  ".claude/settings.json": {
+    "mtime": 1790803904.393538,
+    "seen": 1790803995.7290688,
+    "ast_hash": "039d6ff33b73188e39231d4a5034da06",
+    "semantic_hash": ""
+  },
+  ".cursor/hooks.json": {
+    "mtime": 1790803904.451166,
+    "seen": 1790803995.7290764,
+    "ast_hash": "6b6a4d34218ef73e20055b912f15ab12",
+    "semantic_hash": ""
+  },
+  "AGENTS.md": {
+    "mtime": 1790803904.239519,
+    "seen": 1790803995.7291174,
+    "ast_hash": "8a77c9f72b77beced276e2efa799e8b5",
+    "semantic_hash": ""
+  },
+  "CLAUDE.md": {
+    "mtime": 1790803904.3138,
+    "seen": 1790803995.7291188,
+    "ast_hash": "4c0c638de8e11c40d8b398928c03be4c",
+    "semantic_hash": ""
+  }
+}

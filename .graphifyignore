@@ -1,0 +1,7 @@
+# Keep the knowledge graph to source and docs (.gitignore is also honored).
+volatility-radar/stocks.json
+volatility-radar/resources/
+volatility-radar/analyzer/artifacts/
+volatility-radar/analyzer/stock_data.py
+graphify-out/
+**/.claude/settings.local.json

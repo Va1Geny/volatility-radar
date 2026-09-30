@@ -1,0 +1,7 @@
+# Machine-local: interpreter path, scan root, rebuildable caches, token tally.
+.graphify_python
+.graphify_root
+cache/
+cost.json
+# Automatic backups made before a rebuild replaces a curated graph.
+[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/

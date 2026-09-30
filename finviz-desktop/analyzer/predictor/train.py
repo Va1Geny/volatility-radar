@@ -1,4 +1,4 @@
-"""Train the direction model and save it.
+"""Train the big-move model and save the best epoch.
 
 Run from the analyzer/ directory (so the venv + package import resolve):
 
@@ -10,7 +10,6 @@ from __future__ import annotations
 import argparse
 
 import keras
-import numpy as np
 
 from .config import CONFIG, MODEL_PATH
 from .data_loader import load_many
@@ -19,7 +18,7 @@ from .model import build_model
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Train stock direction LSTM")
+    parser = argparse.ArgumentParser(description="Train the big-move model")
     parser.add_argument("--refresh", action="store_true",
                         help="re-download price data instead of using cache")
     parser.add_argument("--epochs", type=int, default=CONFIG.epochs)
@@ -38,14 +37,13 @@ def main() -> None:
     print("[train] building windowed dataset...")
     Xtr, ytr, Xva, yva = build_training_set(frames)
     print(f"[train] X_train={Xtr.shape}  X_val={Xva.shape}  "
-          f"base_rate(up)={ytr.mean():.3f}")
+          f"base_rate={ytr.mean():.3f}")
 
     model = build_model(n_features=Xtr.shape[2])
     model.summary()
 
-    pos = float(ytr.mean())
-    class_weight = {0: 1.0 / (1.0 - pos) / 2.0, 1: 1.0 / pos / 2.0} if 0 < pos < 1 else None
-
+    # No class_weight on purpose: unweighted cross-entropy keeps the output a real
+    # probability, which the app shows as a %. Alerts use CONFIG.alert_prob instead of 0.5.
     callbacks = [
         keras.callbacks.ModelCheckpoint(
             str(MODEL_PATH), monitor="val_auc", mode="max",
@@ -65,13 +63,13 @@ def main() -> None:
         epochs=args.epochs,
         batch_size=CONFIG.batch_size,
         callbacks=callbacks,
-        class_weight=class_weight,
         verbose=2,
     )
 
-    model.save(MODEL_PATH)
+    # ModelCheckpoint already wrote the best epoch; don't overwrite it with the last one.
+    model = keras.models.load_model(MODEL_PATH)
     val = model.evaluate(Xva, yva, verbose=0, return_dict=True)
-    print(f"[train] saved -> {MODEL_PATH}")
+    print(f"[train] best model -> {MODEL_PATH}")
     print("[train] val " + "  ".join(f"{k}={v:.4f}" for k, v in val.items()))
 
 

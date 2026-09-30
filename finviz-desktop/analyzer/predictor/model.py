@@ -20,8 +20,9 @@ def _compile(model: keras.Model) -> keras.Model:
         metrics=[
             "accuracy",
             keras.metrics.AUC(name="auc"),
-            keras.metrics.Precision(name="precision"),
-            keras.metrics.Recall(name="recall"),
+            # At the alert level, not 0.5: calibrated outputs rarely reach 0.5 (base rate ~0.16).
+            keras.metrics.Precision(thresholds=CONFIG.alert_prob, name="precision"),
+            keras.metrics.Recall(thresholds=CONFIG.alert_prob, name="recall"),
         ],
     )
     return model

@@ -26,17 +26,17 @@ def _get_model() -> keras.Model:
 
 
 def predict_ticker(ticker: str, refresh: bool = False) -> dict:
-    """Return {'ticker', 'prob', 'label'} for the latest bar.
+    """Return {'ticker', 'prob_bigmove' | 'prob_up', 'label'} for the latest bar.
 
     For the bigmove task: prob = P(unusually large move within horizon),
-    label = "BIG MOVE" if prob >= 0.5 else "calm".
+    label = "BIG MOVE" if prob >= CONFIG.alert_prob else "calm".
     """
     df = load_prices(ticker, refresh=refresh)
     window = build_inference_window(df)
     prob = float(_get_model().predict(window, verbose=0)[0, 0])
 
     if CONFIG.task == "bigmove":
-        label = "BIG MOVE" if prob >= 0.5 else "calm"
+        label = "BIG MOVE" if prob >= CONFIG.alert_prob else "calm"
         key = "prob_bigmove"
     else:
         label = "UP" if prob >= 0.5 else "DOWN"

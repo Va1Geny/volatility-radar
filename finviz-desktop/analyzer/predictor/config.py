@@ -15,21 +15,25 @@ ARTIFACTS_DIR.mkdir(exist_ok=True)
 MODEL_PATH = ARTIFACTS_DIR / "bigmove_cnn.keras"
 SCALER_PATH = ARTIFACTS_DIR / "scaler.json"
 
-UNIVERSE = [
-    "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META", "TSLA",
-    "JPM", "V", "MA", "WMT", "JNJ", "PG", "HD", "KO", "PEP", "DIS",
-    "NFLX", "AMD", "INTC", "CSCO", "ORCL", "ADBE", "CRM", "NKE", "MCD",
-    "BA", "XOM", "CVX", "PFE", "MRK", "BAC", "VZ", "IBM", "QCOM",
-    "COST", "TXN", "TSM", "BABA", "TM",
-]
+# Shared with the desktop app: edit watchlist.txt, not a list in here.
+WATCHLIST_PATH = ANALYZER_DIR.parent / "watchlist.txt"
+
+
+def read_watchlist() -> list[str]:
+    lines = WATCHLIST_PATH.read_text().splitlines()
+    return [s for s in (line.split("#")[0].strip().upper() for line in lines) if s]
 
 
 @dataclass
 class Config:
-    tickers: list[str] = field(default_factory=lambda: list(UNIVERSE))
+    tickers: list[str] = field(default_factory=read_watchlist)
 
     task: str = "bigmove"
     move_mult: float = 1.5
+    # P(big move) at which a ticker is labelled "BIG MOVE". The base rate is ~0.16 at
+    # move_mult=1.5, so 0.32 means "twice as likely as usual". Keep in sync with
+    # BigMoveAlert in StockDelegate.h. Retune if you change move_mult or horizon.
+    alert_prob: float = 0.32
 
     period: str = "10y"
     interval: str = "1d"

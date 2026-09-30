@@ -1,6 +1,7 @@
 """Turn per-ticker feature frames into windowed (X, y) arrays for the LSTM.
 
-Scaling is fit on the training portion only and persisted to SCALER_PATH
+Split is chronological per ticker with a `horizon`-row gap so labels never
+see validation prices. Scaling is fit on the training portion only and persisted to SCALER_PATH
 (plain JSON: per-feature mean/std) so predict.py can reuse it without
 re-reading the training data.
 """
@@ -59,12 +60,13 @@ def build_training_set(price_frames: dict[str, pd.DataFrame]):
     per_ticker = []
 
     for ticker, df in price_frames.items():
-        feats = build_features(df)
-        if len(feats) <= window + 1:
+        feats = build_features(df).dropna(subset=["target"])
+        if len(feats) <= 2 * window + CONFIG.horizon:
             print(f"[dataset] skip {ticker}: not enough rows ({len(feats)})")
             continue
         split = int(len(feats) * (1.0 - CONFIG.val_split))
-        train_df = feats.iloc[:split]
+        # The last `horizon` train labels look into the validation period: drop them.
+        train_df = feats.iloc[:split - CONFIG.horizon]
         val_df = feats.iloc[split:]
         per_ticker.append((train_df, val_df))
         train_feat_rows.append(train_df[CONFIG.feature_cols].to_numpy("float32"))

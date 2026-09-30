@@ -9,8 +9,11 @@ It is a CNN that predicts whether a stock will make an UNUSUALLY LARGE move
 (up vs down) - that is near-impossible on liquid stocks (coin flip).
 
 Output per stock = a probability 0..1 = P(big move soon).
-  >= 0.5  -> "BIG MOVE"   (volatility likely)
-  <  0.5  -> "calm"
+About 16% of weeks are "big move" weeks (the base rate), so a typical stock
+scores around 0.16. The alert level is alert_prob in config.py:
+  >= 0.32 (alert_prob, ~2x normal)  -> "BIG MOVE"   (volatility likely)
+  <  0.32                           -> "calm"
+The desktop app colors the Big Move column amber from 24% and red from 32%.
 
 Why this works: volatility clusters. Big moves follow big moves, calm follows
 calm. That pattern is real and learnable. Validation AUC ~0.63 (real signal,
@@ -34,6 +37,8 @@ analyzer/
   artifacts/        saved model (bigmove_cnn.keras) + scaler.json   [auto-made]
   cache/            cached price data (parquet)                     [auto-made]
   requirements.txt  python packages needed
+  test_labels.py    quick sanity check:  python test_labels.py
+../watchlist.txt    the tickers to train on and predict (shared with the app)
 
 
 ==============================================================================
@@ -85,9 +90,13 @@ Read the printed numbers:
    python -m predictor.predict AAPL NVDA TSLA
 
 Prints one line per ticker, e.g.:
-   {'ticker': 'TSLA', 'prob_bigmove': 0.57, 'label': 'BIG MOVE'}
+   {'ticker': 'TSLA', 'prob_bigmove': 0.37, 'label': 'BIG MOVE'}
 
-No tickers given = scores the whole default list from config.py.
+No tickers given = scores every ticker in watchlist.txt.
+
+To feed the desktop app, run the server instead (leave it running):
+   python -m predictor.serve
+It re-downloads prices and re-scores every ticker every 30 minutes.
 
 
 ==============================================================================
@@ -95,11 +104,15 @@ No tickers given = scores the whole default list from config.py.
 ==============================================================================
 Open predictor/config.py. The important knobs:
 
-  tickers        which stocks to train on. Add/remove symbols freely.
+  tickers        read from ../watchlist.txt. Edit that file, not config.py.
   task           "bigmove" (volatility) or "direction" (up/down, weak).
   move_mult      how big a move counts as "big". 1.5 = 1.5x normal move.
                  Lower it (e.g. 1.2) = more "big move" labels, easier task.
                  Raise it (e.g. 2.0) = only flag extreme moves.
+                 Changing it changes the base rate: retune alert_prob (about
+                 2x the new base_rate printed by train) and the matching
+                 BigMoveWarn/BigMoveAlert in StockDelegate.h.
+  alert_prob     probability at which a ticker is labelled "BIG MOVE".
   period         how much history to download ("5y", "10y", "max").
   window         how many past days the model looks at (40 = ~2 months).
   horizon        how many days ahead it predicts (5 = one week).
@@ -124,7 +137,7 @@ AFTER EDITING config.py, just re-run:  python -m predictor.train
  COMMON CHANGES - RECIPES
 ==============================================================================
 * Train on more / different stocks:
-    edit `tickers` (or `UNIVERSE`) in config.py, then `--refresh` once.
+    edit ../watchlist.txt, then train with `--refresh` once.
 
 * Make the task easier (more signal, less precise):
     lower `move_mult` to ~1.2, or raise `horizon` to 10.

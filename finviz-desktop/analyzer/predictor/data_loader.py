@@ -1,8 +1,4 @@
-"""Download OHLCV history via yfinance, cached to parquet.
-
-Supersedes the old analyzer/stock_data.py (which had bugs:
-interval="id", raw.empty(), self.choice). Use load_prices() instead.
-"""
+"""Download OHLCV history via yfinance, cached to parquet."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -37,7 +33,7 @@ def load_prices(
         return pd.read_parquet(path)
 
     raw = yf.download(
-        ticker,
+        ticker.replace(".", "-"),  # Yahoo spells share classes BRK-B, Finnhub BRK.B
         period=period,
         interval=interval,
         auto_adjust=True,
@@ -45,6 +41,8 @@ def load_prices(
     )
 
     if raw is None or raw.empty:
+        if path.exists():
+            return pd.read_parquet(path)  # download failed: fall back to the last good copy
         raise ValueError(f"No data returned for {ticker}")
 
     if isinstance(raw.columns, pd.MultiIndex):

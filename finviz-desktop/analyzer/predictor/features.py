@@ -88,11 +88,15 @@ def build_features(df: pd.DataFrame, horizon: int | None = None) -> pd.DataFrame
 
     fwd_ret = close.shift(-horizon) / close - 1.0
     if CONFIG.task == "bigmove":
-        daily_std = close.pct_change().rolling(20).std()
-        expected_move = daily_std * np.sqrt(horizon)
-        out["target"] = (fwd_ret.abs() > CONFIG.move_mult * expected_move).astype("float32")
+        expected_move = close.pct_change().rolling(20).std() * np.sqrt(horizon)
+        label = fwd_ret.abs() > CONFIG.move_mult * expected_move
+        known = fwd_ret.notna() & expected_move.notna()
     else:
-        out["target"] = (fwd_ret > 0).astype("float32")
+        label = fwd_ret > 0
+        known = fwd_ret.notna()
+    # Unknown future -> NaN, not 0. Training drops those rows; inference still
+    # needs them (the latest bars are exactly the ones with no future yet).
+    out["target"] = label.astype("float32").where(known)
 
-    out = out.replace([np.inf, -np.inf], np.nan).dropna()
+    out = out.replace([np.inf, -np.inf], np.nan).dropna(subset=CONFIG.feature_cols)
     return out[CONFIG.feature_cols + ["target"]]

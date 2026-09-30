@@ -1,20 +1,12 @@
-"""Stock direction predictor — modular Keras pipeline.
+"""Big-move predictor: modular Keras pipeline.
 
 Submodules (split for debugging):
-    config        paths, ticker universe, hyperparameters
+    config        paths, ticker list (watchlist.txt), hyperparameters
     data_loader   yfinance download + on-disk cache
-    features      technical indicators (returns, RSI, MACD, volume z-score)
+    features      technical indicators and the big-move target label
     dataset       windowing -> (X, y) sequences, scaling, train/val split
-    model         Keras model factory (LSTM classifier)
-    train         CLI: build dataset, train, save model + scaler
-    predict       load model, predict next-day direction for a ticker
-    serve         local websocket server pushing predictions to the terminal
+    model         Keras model factory (dilated CNN, optional CNN+LSTM)
+    train         CLI: build dataset, train, save best model + scaler
+    predict       load model, score P(big move) for a ticker
+    serve         local websocket server pushing predictions to the app
 """
-
-__all__ = [
-    "config",
-    "data_loader",
-    "features",
-    "dataset",
-    "model",
-]

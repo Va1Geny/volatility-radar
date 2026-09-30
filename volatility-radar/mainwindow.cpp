@@ -20,7 +20,7 @@
 // The source tree when built from source (so edits apply without a copy step), else next to the exe.
 static QString appFile(const QString & name)
 {
-	const QString inSource = QString(FINVIZ_SOURCE_DIR) + '/' + name;
+	const QString inSource = QString(APP_SOURCE_DIR) + '/' + name;
 	return QFileInfo::exists(inSource) ? inSource : QCoreApplication::applicationDirPath() + '/' + name;
 }
 
@@ -147,7 +147,7 @@ void MainWindow::setupTheme()
 	if (qssFile.open(QIODevice::ReadOnly | QIODevice::Text))
 		qApp->setStyleSheet(QString::fromUtf8(qssFile.readAll()));
 
-	setWindowTitle("FINVIZ TERMINAL");
+	setWindowTitle("VOLATILITY RADAR");
 	resize(1600, 900);
 }
 

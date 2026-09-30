@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>FINVIZ TERMINAL</string>
+   <string>VOLATILITY RADAR</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="mainLayout">
@@ -54,7 +54,7 @@
        <item>
         <widget class="QLabel" name="appTitle">
          <property name="text">
-          <string>◆ FINVIZ TERMINAL</string>
+          <string>◆ VOLATILITY RADAR</string>
          </property>
          <property name="styleSheet">
           <string>font-size: 15px; font-weight: bold; color: #2962FF; letter-spacing: 2px;</string>

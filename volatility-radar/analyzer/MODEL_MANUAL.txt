@@ -1,5 +1,5 @@
 ==============================================================================
- FINVIZ DESKTOP - BIG MOVE MODEL - MANUAL
+ VOLATILITY RADAR - BIG MOVE MODEL - MANUAL
 ==============================================================================
 
 WHAT THIS MODEL DOES

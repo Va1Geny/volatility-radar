@@ -1,6 +1,6 @@
-# finviz-desktop
+# volatility-radar
 
-A dark, Finviz-style stock screener for the desktop, built with C++ and Qt 6.
+A dark desktop stock screener, inspired by Finviz, built with C++ and Qt 6.
 It shows live US stock prices from [Finnhub](https://finnhub.io). An optional
 Python model flags which stocks are likely to make an unusually large move in
 the next week.
@@ -33,14 +33,14 @@ macOS should work but are untested.
 ### 2. Get the code
 
 ```bash
-git clone https://github.com/Va1Geny/finviz-desktop.git
-cd finviz-desktop/finviz-desktop
+git clone https://github.com/Va1Geny/volatility-radar.git
+cd volatility-radar/volatility-radar
 ```
 
 ### 3. Build and run
 
 **Easiest: Qt Creator.** Choose *File → Open File or Project*, pick
-`finviz-desktop/CMakeLists.txt`, select a kit (for example *Desktop Qt 6.x MSVC2022 64bit*),
+`volatility-radar/CMakeLists.txt`, select a kit (for example *Desktop Qt 6.x MSVC2022 64bit*),
 then press **Run** (Ctrl+R).
 
 **Command line:**
@@ -64,7 +64,7 @@ With no API key the app starts in **offline mode** and shows the bundled snapsho
 ## Live data (free Finnhub key)
 
 1. Create a free account at <https://finnhub.io/register> and copy your API key.
-2. In the `finviz-desktop/` folder, copy `.env.example` to a new file named `.env`.
+2. In the `volatility-radar/` folder, copy `.env.example` to a new file named `.env`.
 3. Paste your key after the `=`:
 
    ```
@@ -83,7 +83,7 @@ on another PC), it looks next to the `.exe`.
 
 ### Choosing stocks
 
-Live mode tracks the tickers in [`finviz-desktop/watchlist.txt`](finviz-desktop/watchlist.txt):
+Live mode tracks the tickers in [`volatility-radar/watchlist.txt`](volatility-radar/watchlist.txt):
 one symbol per line, with `#` for comments. The analyzer uses the same file.
 Finnhub's free plan streams up to 50 symbols, and each symbol costs 2 API calls at startup.
 
@@ -99,7 +99,7 @@ Finnhub's free plan streams up to 50 symbols, and each symbol costs 2 API calls 
 
 ## Big-move predictions (optional)
 
-The `finviz-desktop/analyzer/` folder holds a small Keras model. It scores each
+The `volatility-radar/analyzer/` folder holds a small Keras model. It scores each
 watchlist ticker with P(unusually large move in the next 5 trading days) and
 streams the scores to the app's **Big Move** column.
 
@@ -112,7 +112,7 @@ The base rate is about 16%, so a typical stock scores around 16%.
 Needs Python 3.10–3.13 (TensorFlow's supported range).
 
 ```powershell
-cd finviz-desktop/analyzer
+cd volatility-radar/analyzer
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1        # macOS/Linux: source .venv/bin/activate
 pip install -r requirements.txt
@@ -143,7 +143,7 @@ The feed re-downloads prices and re-scores every ticker every 30 minutes.
 To score a few tickers once from the terminal instead, run `python -m predictor.predict AAPL TSLA`.
 
 To tune the model (thresholds, features, architecture), see
-[`analyzer/MODEL_MANUAL.txt`](finviz-desktop/analyzer/MODEL_MANUAL.txt).
+[`analyzer/MODEL_MANUAL.txt`](volatility-radar/analyzer/MODEL_MANUAL.txt).
 
 ---
 
@@ -151,7 +151,7 @@ To tune the model (thresholds, features, architecture), see
 
 ```
 Finnhub REST       (names, quotes at startup) ──┐
-Finnhub websocket  (live trades)              ──┼──►  finviz-desktop (Qt app)
+Finnhub websocket  (live trades)              ──┼──►  volatility-radar (Qt app)
 analyzer/serve.py  (Big Move %, local ws:8765) ─┘
       ▲
       └── yfinance daily prices ──► Keras model
@@ -160,7 +160,7 @@ analyzer/serve.py  (Big Move %, local ws:8765) ─┘
 ## Project layout
 
 ```
-finviz-desktop/
+volatility-radar/
   main.cpp, mainwindow.*     window, layout, wiring
   StockModel.*               table data (one row per stock)
   StockFilterProxy.*         search, sector, price filters and numeric sorting
@@ -179,7 +179,7 @@ finviz-desktop/
 
 | Symptom | Fix |
 |---------|-----|
-| Status bar says *Offline snapshot* | No key found. Check that `.env` sits in `finviz-desktop/` and has `FINNHUB_API_KEY=...` with no spaces around `=`. |
+| Status bar says *Offline snapshot* | No key found. Check that `.env` sits in `volatility-radar/` and has `FINNHUB_API_KEY=...` with no spaces around `=`. |
 | *Live error: …* or constant reconnects | The key is invalid, or you're over the free plan's limits. The app backs off automatically, up to 60 s between retries. |
 | A ticker is missing in live mode | Finnhub returned no quote for it (unknown symbol, or not on the free plan). The status bar shows `SYMBOL: no quote, skipped`. |
 | *Predictions: offline* | `python -m predictor.serve` isn't running, or has no trained model yet. |

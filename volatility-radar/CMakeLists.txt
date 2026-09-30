@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.19)
-project(finviz-desktop LANGUAGES CXX)
+project(volatility-radar LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -13,7 +13,7 @@ find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets Charts WebSockets Network)
 
 qt_standard_project_setup()
 
-qt_add_executable(finviz-desktop
+qt_add_executable(volatility-radar
     WIN32
     MACOSX_BUNDLE
     main.cpp
@@ -34,7 +34,7 @@ qt_add_executable(finviz-desktop
     PredictionClient.h
 )
 
-target_link_libraries(finviz-desktop
+target_link_libraries(volatility-radar
     PRIVATE
         Qt6::Core
         Qt6::Widgets
@@ -45,10 +45,10 @@ target_link_libraries(finviz-desktop
 
 # Data files (.env, watchlist.txt, stocks.json, style.qss) are read from the source tree
 # if it exists, else from next to the exe (installed copies below).
-target_compile_definitions(finviz-desktop PRIVATE
-    FINVIZ_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
+target_compile_definitions(volatility-radar PRIVATE
+    APP_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 
-install(TARGETS finviz-desktop
+install(TARGETS volatility-radar
     BUNDLE DESTINATION .
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
@@ -57,7 +57,7 @@ install(FILES stocks.json style.qss watchlist.txt .env.example
     DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 qt_generate_deploy_app_script(
-    TARGET finviz-desktop
+    TARGET volatility-radar
     OUTPUT_SCRIPT deploy_script
     NO_UNSUPPORTED_PLATFORM_ERROR
 )

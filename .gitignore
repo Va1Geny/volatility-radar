@@ -48,6 +48,9 @@
 *.out
 *.app
 
+# Visual Studio cache
+.vs/
+
 # Build directories
 build/
 Build/

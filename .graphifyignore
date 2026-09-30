@@ -4,4 +4,5 @@ volatility-radar/resources/
 volatility-radar/analyzer/artifacts/
 volatility-radar/analyzer/stock_data.py
 graphify-out/
+docs/
 **/.claude/settings.local.json

@@ -34,6 +34,12 @@ qt_add_executable(volatility-radar
     PredictionClient.h
 )
 
+# .exe icon (Explorer, taskbar) on Windows; window icon everywhere via Qt resources.
+if(WIN32)
+    target_sources(volatility-radar PRIVATE app.rc)
+endif()
+qt_add_resources(volatility-radar "icon" PREFIX "/" FILES resources/app.png)
+
 target_link_libraries(volatility-radar
     PRIVATE
         Qt6::Core

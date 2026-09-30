@@ -1,3 +1,5 @@
+<p align="center"><img src="volatility-radar/resources/app.png" width="128" alt="Volatility Radar icon"></p>
+
 # volatility-radar
 
 A dark desktop stock screener, inspired by Finviz, built with C++ and Qt 6.
@@ -171,6 +173,7 @@ volatility-radar/
   watchlist.txt              tickers for live mode and the model
   stocks.json                offline snapshot (Nasdaq screener export)
   style.qss                  dark theme
+  resources/, app.rc         app icon (window, taskbar, .exe)
   .env.example               template for your API key
   analyzer/                  Python model: train, predict, serve
 ```

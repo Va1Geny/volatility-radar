@@ -1,11 +1,13 @@
 #include "mainwindow.h"
 
 #include <QApplication>
+#include <QIcon>
 #include <QStyleFactory>
 
 int main(int argc, char * argv[])
 {
 	QApplication a(argc, argv);
+	a.setWindowIcon(QIcon(":/resources/app.png"));
 
 	a.setStyle(QStyleFactory::create("Fusion"));
 

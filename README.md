@@ -2,6 +2,8 @@
 
 # volatility-radar
 
+[![CI](https://github.com/Va1Geny/volatility-radar/actions/workflows/ci.yml/badge.svg)](https://github.com/Va1Geny/volatility-radar/actions/workflows/ci.yml)
+
 A dark desktop stock screener, inspired by Finviz, built with C++ and Qt 6.
 It shows live US stock prices from [Finnhub](https://finnhub.io). An optional
 Python model flags which stocks are likely to make an unusually large move in
@@ -9,9 +11,10 @@ the next week.
 
 - **Screener table**: sort by any column, search by ticker or name, and filter by sector and price range.
 - **Live prices**: streamed over a websocket, with net and % change against the previous close.
-- **Stock details panel**, plus a sector distribution chart.
-- **Big Move column**: the model's probability of an unusually large move (up *or* down) within 5 trading days.
+- **Stock details panel** with a 6-month price chart (watchlist stocks), plus a sector distribution chart.
+- **Big Move column**: the model's probability of an unusually large move (up *or* down) within 5 trading days. Hover a value for what it means.
 - **Offline mode**: with no API key, the app loads a bundled snapshot of about 7,000 US listings, so you can try it with no account.
+- Remembers its window size, panel layout and sort order between runs.
 
 ![Volatility Radar with live Finnhub prices and Big Move predictions](docs/app.png)
 
@@ -23,25 +26,35 @@ the next week.
 
 ## Quick start
 
-### 1. Install the prerequisites
+### Option A: download (Windows, no build tools)
+
+1. Download `VolatilityRadar-<version>-windows-x64.zip` from the
+   [latest release](https://github.com/Va1Geny/volatility-radar/releases/latest) and unzip it anywhere.
+2. Run `VolatilityRadar/bin/volatility-radar.exe`. It starts in offline mode.
+3. For live prices, add your key to a `.env` file in the same `bin` folder (see [Live data](#live-data-free-finnhub-key)).
+   For predictions, set up the analyzer in `bin/analyzer` (see [Big-move predictions](#big-move-predictions-optional)).
+
+### Option B: build from source
+
+#### 1. Install the prerequisites
 
 | Tool | Version | Notes |
 |------|---------|-------|
 | [Qt](https://www.qt.io/download-qt-installer-oss) | 6.5 or newer | In the installer, also tick **Qt Charts** and **Qt WebSockets** (under *Additional Libraries*). |
 | C++ compiler | C++17 | MSVC 2022 or MinGW (both ship with the Qt installer on Windows). |
-| CMake | 3.19 or newer | Also ships with the Qt installer. |
+| CMake | 3.22 or newer | Also ships with the Qt installer. |
 
-Developed and tested on Windows 11. The code is portable Qt, so Linux and
-macOS should work but are untested.
+Developed on Windows 11; CI builds and tests it on Windows and Linux. macOS
+should work but is untested.
 
-### 2. Get the code
+#### 2. Get the code
 
 ```bash
 git clone https://github.com/Va1Geny/volatility-radar.git
 cd volatility-radar/volatility-radar
 ```
 
-### 3. Build and run
+#### 3. Build and run
 
 **Easiest: Qt Creator.** Choose *File → Open File or Project*, pick
 `volatility-radar/CMakeLists.txt`, select a kit (for example *Desktop Qt 6.x MSVC2022 64bit*),
@@ -68,7 +81,8 @@ With no API key the app starts in **offline mode** and shows the bundled snapsho
 ## Live data (free Finnhub key)
 
 1. Create a free account at <https://finnhub.io/register> and copy your API key.
-2. In the `volatility-radar/` folder, copy `.env.example` to a new file named `.env`.
+2. In the `volatility-radar/` folder (downloaded app: the `bin` folder next to the `.exe`),
+   copy `.env.example` to a new file named `.env`.
 3. Paste your key after the `=`:
 
    ```
@@ -113,7 +127,8 @@ The base rate is about 16%, so a typical stock scores around 16%.
 
 ### Setup (once)
 
-Needs Python 3.10–3.13 (TensorFlow's supported range).
+Needs Python 3.10–3.13 (TensorFlow's supported range). Create the venv inside the
+analyzer folder: `volatility-radar/analyzer` from source, or `bin/analyzer` in the download.
 
 ```powershell
 cd volatility-radar/analyzer
@@ -136,15 +151,20 @@ Training runs on the CPU. For the default 41-stock watchlist it takes about
 5 minutes, including the download, and it stops early once it stops improving.
 The best epoch is saved to `analyzer/artifacts/bigmove_cnn.keras`.
 
-### Run the prediction feed
+### The prediction feed
 
-```powershell
-python -m predictor.serve
-```
+**The app starts it for you.** Once `analyzer/.venv` exists, the app launches
+`python -m predictor.serve` in the background at startup and stops it on exit.
+The status bar goes from **Predictions: starting...** to **Predictions: live**
+after about 10–20 seconds (TensorFlow is slow to load).
 
-Leave it running and start the app. The status bar should say **Predictions: live**.
-The feed re-downloads prices and re-scores every ticker every 30 minutes.
-To score a few tickers once from the terminal instead, run `python -m predictor.predict AAPL TSLA`.
+The feed re-downloads prices and re-scores every ticker every 30 minutes. During
+market hours it ignores today's unfinished bar, because the model only trained on
+completed days. Each prediction also carries 6 months of closes, which the app
+draws as the price chart.
+
+To run the feed by hand instead, run `python -m predictor.serve` before starting the app.
+To score a few tickers once from the terminal, run `python -m predictor.predict AAPL TSLA`.
 
 To tune the model (thresholds, features, architecture), see
 [`analyzer/MODEL_MANUAL.txt`](volatility-radar/analyzer/MODEL_MANUAL.txt).
@@ -177,7 +197,8 @@ volatility-radar/
   style.qss                  dark theme
   resources/, app.rc         app icon (window, taskbar, .exe)
   .env.example               template for your API key
-  analyzer/                  Python model: train, predict, serve
+  tests/                     C++ unit tests (Qt Test)
+  analyzer/                  Python model: train, predict, serve, walk-forward evaluation
 ```
 
 ## Troubleshooting
@@ -187,9 +208,23 @@ volatility-radar/
 | Status bar says *Offline snapshot* | No key found. Check that `.env` sits in `volatility-radar/` and has `FINNHUB_API_KEY=...` with no spaces around `=`. |
 | *Live error: …* or constant reconnects | The key is invalid, or you're over the free plan's limits. The app backs off automatically, up to 60 s between retries. |
 | A ticker is missing in live mode | Finnhub returned no quote for it (unknown symbol, or not on the free plan). The status bar shows `SYMBOL: no quote, skipped`. |
-| *Predictions: offline* | `python -m predictor.serve` isn't running, or has no trained model yet. |
+| *Predictions: offline* | `analyzer/.venv` doesn't exist yet (see [Setup](#setup-once)), or the feed crashed. Run `python -m predictor.serve` by hand to see its error. |
+| No price chart for a stock | Charts come with predictions, so only watchlist stocks have one, and only while the feed is live. |
 | App won't start: missing `Qt6*.dll` | Run it from Qt Creator, or use `cmake --install build --prefix dist`, which copies the DLLs. |
 | `No model at …` from the analyzer | Train first: `python -m predictor.train`. |
+
+## Running the tests
+
+```bash
+# C++: model, sorting, filters, snapshot parser (no window needed)
+cmake --build build && ctest --test-dir build --output-on-failure
+
+# Python: labels, earnings feature, partial-bar handling (needs only pandas + numpy)
+cd volatility-radar/analyzer && python test_predictor.py
+```
+
+CI runs both on every push and pull request, on Windows and Linux. Pushing a
+`v*` tag builds the Windows download and attaches it to a GitHub Release.
 
 ## Contributing (people and AI agents)
 

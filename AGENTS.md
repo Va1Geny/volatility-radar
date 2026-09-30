@@ -15,19 +15,25 @@ Human-facing docs are in README.md.
 # inside a single `cmd /c` line, %PATH% is expanded before vcvars runs.
 cmake -S volatility-radar -B volatility-radar/build/cli -G Ninja -DCMAKE_PREFIX_PATH=<Qt>/msvc2022_64
 cmake --build volatility-radar/build/cli
+ctest --test-dir volatility-radar/build/cli --output-on-failure   # C++ unit tests (Qt Test, no window)
 
 # Python (from volatility-radar/analyzer, venv active)
-python test_labels.py               # label sanity check; run after touching features/dataset
+python test_predictor.py            # labels, earnings feature, partial bars (pandas + numpy only)
+python -m predictor.walkforward     # honest multi-fold AUC; use it before claiming a model improvement
 python -m predictor.train --refresh # retrain (~5 min); rewrites the committed artifacts/
-python -m predictor.serve           # prediction feed for the app
+python -m predictor.serve           # prediction feed (the app normally starts it itself)
 ```
 
-The C++ side has no unit tests. Verify changes by building, then running the app offline (no `.env`) and live (with `.env`).
+CI (`.github/workflows/ci.yml`) runs the C++ tests on Windows and Linux, plus the Python tests.
+Pushing a `v*` tag builds the Windows zip and attaches it to a GitHub Release (`release.yml`).
+To smoke-test the GUI without a window, set `QT_QPA_PLATFORM=offscreen`.
 
 ## Invariants: keep these in sync
 
 - **Columns**: `StockModel::Column` is the only column list. The proxy and delegate use it, and numeric columns expose raw values via `Qt::UserRole` (sorting relies on that).
-- **Alert levels**: `alert_prob` in `analyzer/predictor/config.py` must match `BigMoveWarn`/`BigMoveAlert` in `StockDelegate.h`. Both assume a base rate of ~0.16 at `move_mult=1.5`.
+- **Alert levels**: `alert_prob` in `analyzer/predictor/config.py` must match `BigMoveWarn`/`BigMoveAlert` in `StockDelegate.h` and `BigMoveBaseRate` in `StockModel.h` (used in tooltips). All assume a base rate of ~0.16 at `move_mult=1.5`.
+- **Prediction message**: `predict_ticker()` returns `{ticker, prob_bigmove, label, closes}`, and `PredictionClient.cpp` parses the same keys. Change both together.
+- **Features**: `feature_cols` in `config.py` must match the trained model and `scaler.json`. Adding or removing a feature means retraining and committing the new `artifacts/`.
 - **Tickers**: `volatility-radar/watchlist.txt` is read by both the app and the analyzer. Use Finnhub format (`BRK.B`); the loader converts to Yahoo format.
 - **Predictions** are stored by symbol in `StockModel::m_bigMoveProb`, because they can arrive before a row exists.
 - **Data files** (`.env`, `watchlist.txt`, `stocks.json`, `style.qss`) are looked up in the source tree first (`APP_SOURCE_DIR`), then next to the exe.

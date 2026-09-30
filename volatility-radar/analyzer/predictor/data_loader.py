@@ -1,6 +1,7 @@
 """Download OHLCV history via yfinance, cached to parquet."""
 from __future__ import annotations
 
+import time
 from pathlib import Path
 
 import pandas as pd
@@ -52,6 +53,30 @@ def load_prices(
     raw.index.name = "Date"
     raw.to_parquet(path)
     return raw
+
+
+def load_earnings(ticker: str, refresh: bool = False) -> pd.DatetimeIndex:
+    """Earnings report timestamps (past and scheduled) from Yahoo, cached to parquet.
+
+    refresh=True re-downloads only if the cache is older than a day: report dates
+    rarely change, and the prediction feed calls this every sweep.
+    """
+    ticker = ticker.upper()
+    path = CACHE_DIR / f"{ticker}_earnings.parquet"
+    cached = lambda: pd.DatetimeIndex(pd.read_parquet(path)["when"] if path.exists() else [])
+    if path.exists() and (not refresh or time.time() - path.stat().st_mtime < 86_400):
+        return cached()
+
+    try:
+        table = yf.Ticker(ticker.replace(".", "-")).get_earnings_dates(limit=100)
+    except Exception as exc:
+        table = None
+        print(f"[data_loader] earnings dates for {ticker} failed: {exc}")
+    if table is None or table.empty:
+        return cached()  # keep the last good copy (or nothing) rather than fail the run
+
+    pd.DataFrame({"when": table.index}).to_parquet(path)
+    return pd.DatetimeIndex(table.index)
 
 
 def load_many(

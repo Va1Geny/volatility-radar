@@ -27,17 +27,18 @@ guaranteed buy/sell signal.
 analyzer/
   predictor/
     config.py       <- ALL settings live here. Edit this, not the others.
-    data_loader.py  downloads prices (yfinance) and caches them
-    features.py     builds the indicators + the training label
+    data_loader.py  downloads prices + earnings dates (yfinance), caches them
+    features.py     builds the indicators, earnings features + the training label
     dataset.py      turns features into training windows, scales them
     model.py        the CNN (and an alternative CNN+LSTM)
     train.py        runs training, saves the model
+    walkforward.py  honest multi-fold evaluation (trains 4 models, saves nothing)
     predict.py      scores tickers with the trained model
-    serve.py        optional: streams predictions over a websocket
-  artifacts/        saved model (bigmove_cnn.keras) + scaler.json   [auto-made]
-  cache/            cached price data (parquet)                     [auto-made]
+    serve.py        streams predictions over a websocket (the app starts it)
+  artifacts/        saved model (bigmove_cnn.keras) + scaler.json   [committed]
+  cache/            cached prices + earnings dates (parquet)        [auto-made]
   requirements.txt  python packages needed
-  test_labels.py    quick sanity check:  python test_labels.py
+  test_predictor.py quick sanity checks:  python test_predictor.py
 ../watchlist.txt    the tickers to train on and predict (shared with the app)
 
 
@@ -152,7 +153,17 @@ AFTER EDITING config.py, just re-run:  python -m predictor.train
     1) compute it inside build_features() in features.py
        (add a column:  out["my_feature"] = ... )
     2) add its name to `feature_cols` in config.py
-    3) retrain with --refresh
+    3) check it actually helps before keeping it:
+         python -m predictor.walkforward                      (with it)
+         python -m predictor.walkforward --drop my_feature    (without it)
+       Keep it only if the mean AUC goes up across the folds.
+    4) retrain with --refresh and commit the new artifacts/
+
+* Judge the model honestly:
+    python -m predictor.walkforward
+  trains a fresh model on the first 60/70/80/90% of history and tests on the
+  next 10% each time. One lucky split can't fool it the way a single
+  validation number can.
 
 
 ==============================================================================

@@ -49,25 +49,31 @@ def load_scaler() -> dict:
     return json.loads(SCALER_PATH.read_text())
 
 
-def build_training_set(price_frames: dict[str, pd.DataFrame]):
+def build_training_set(price_frames: dict[str, pd.DataFrame],
+                       earnings: dict[str, pd.DatetimeIndex] | None = None,
+                       val_start: float = 1.0 - CONFIG.val_split, val_end: float = 1.0,
+                       save: bool = True):
     """Build (X_train, y_train, X_val, y_val) across all tickers.
 
-    Split is chronological per ticker (no shuffle) to avoid look-ahead leak,
-    then concatenated. Scaler is fit on training rows only.
+    Per ticker, rows before `val_start` (fraction of its history) train and rows in
+    [val_start, val_end) validate; the default is the last `val_split` of history.
+    Split is chronological (no shuffle), then concatenated. The scaler is fit on
+    training rows only and saved unless save=False (walk-forward folds).
     """
     window = CONFIG.window
+    earnings = earnings or {}
     train_feat_rows = []
     per_ticker = []
 
     for ticker, df in price_frames.items():
-        feats = build_features(df).dropna(subset=["target"])
-        if len(feats) <= 2 * window + CONFIG.horizon:
+        feats = build_features(df, earnings.get(ticker)).dropna(subset=["target"])
+        lo, hi = int(len(feats) * val_start), int(len(feats) * val_end)
+        if lo - CONFIG.horizon <= window + 1 or hi - lo <= window + 1:
             print(f"[dataset] skip {ticker}: not enough rows ({len(feats)})")
             continue
-        split = int(len(feats) * (1.0 - CONFIG.val_split))
         # The last `horizon` train labels look into the validation period: drop them.
-        train_df = feats.iloc[:split - CONFIG.horizon]
-        val_df = feats.iloc[split:]
+        train_df = feats.iloc[:lo - CONFIG.horizon]
+        val_df = feats.iloc[lo:hi]
         per_ticker.append((train_df, val_df))
         train_feat_rows.append(train_df[CONFIG.feature_cols].to_numpy("float32"))
 
@@ -75,7 +81,8 @@ def build_training_set(price_frames: dict[str, pd.DataFrame]):
         raise ValueError("No ticker produced enough data to train on.")
 
     scaler = _fit_scaler(np.concatenate(train_feat_rows, axis=0))
-    save_scaler(scaler)
+    if save:
+        save_scaler(scaler)
 
     Xtr, ytr, Xva, yva = [], [], [], []
     for train_df, val_df in per_ticker:
@@ -91,10 +98,23 @@ def build_training_set(price_frames: dict[str, pd.DataFrame]):
     )
 
 
-def build_inference_window(df: pd.DataFrame) -> np.ndarray:
+def completed_bars(df: pd.DataFrame, now: pd.Timestamp | None = None) -> pd.DataFrame:
+    """Drop today's bar while the US market is still open.
+
+    During the session Yahoo returns a partial daily bar (partial volume, moving
+    close); the model only ever trained on finished days.
+    """
+    now = now or pd.Timestamp.now(tz="America/New_York")
+    if len(df) and df.index[-1].date() == now.date() and now.hour < 16:
+        return df.iloc[:-1]
+    return df
+
+
+def build_inference_window(df: pd.DataFrame,
+                           earnings: pd.DatetimeIndex | None = None) -> np.ndarray:
     """Latest single window (1, window, n_features) for predicting next move."""
     scaler = load_scaler()
-    feats = build_features(df)
+    feats = build_features(df, earnings)
     mat = _apply_scaler(feats[CONFIG.feature_cols].to_numpy("float32"), scaler)
     window = CONFIG.window
     if len(mat) < window:

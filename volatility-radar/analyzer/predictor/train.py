@@ -12,7 +12,7 @@ import argparse
 import keras
 
 from .config import CONFIG, MODEL_PATH
-from .data_loader import load_many
+from .data_loader import load_earnings, load_many
 from .dataset import build_training_set
 from .model import build_model
 
@@ -33,9 +33,10 @@ def main() -> None:
     print("[train] loading prices...")
     frames = load_many(args.tickers, refresh=args.refresh)
     print(f"[train] {len(frames)} tickers loaded")
+    earnings = {t: load_earnings(t, refresh=args.refresh) for t in frames}
 
     print("[train] building windowed dataset...")
-    Xtr, ytr, Xva, yva = build_training_set(frames)
+    Xtr, ytr, Xva, yva = build_training_set(frames, earnings)
     print(f"[train] X_train={Xtr.shape}  X_val={Xva.shape}  "
           f"base_rate={ytr.mean():.3f}")
 

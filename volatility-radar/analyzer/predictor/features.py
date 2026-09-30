@@ -46,10 +46,32 @@ def _stoch_k(df: pd.DataFrame, period: int = 14) -> pd.Series:
     return (df["Close"] - low_n) / (high_n - low_n).replace(0.0, np.nan) * 100.0
 
 
-def build_features(df: pd.DataFrame, horizon: int | None = None) -> pd.DataFrame:
-    """Add indicator + calendar columns and a binary forward-direction target.
+def _days_to_earnings(index: pd.DatetimeIndex, earnings: pd.DatetimeIndex | None) -> np.ndarray:
+    """Business days from each bar to the next earnings *reaction* day (inf if none known).
 
-    target = 1 if Close goes up `horizon` bars ahead, else 0.
+    The reaction day is the report day for pre-market reports and the next business
+    day for reports after 12:00 New York time (after-close reports move the next open).
+    Report dates are scheduled weeks ahead, so using future ones is not look-ahead.
+    """
+    days = np.full(len(index), np.inf)
+    if earnings is None or len(earnings) == 0:
+        return days
+    ny = earnings.tz_convert("America/New_York") if earnings.tz is not None else earnings
+    react = ny.tz_localize(None).normalize()
+    react = react.where(ny.hour < 12, react + pd.offsets.BDay(1))
+    react = np.unique(react.values.astype("datetime64[D]"))
+    bars = index.values.astype("datetime64[D]")
+    pos = np.searchsorted(react, bars, side="right")  # first reaction strictly after the bar
+    known = pos < len(react)
+    days[known] = np.busday_count(bars[known], react[pos[known]])
+    return days
+
+
+def build_features(df: pd.DataFrame, earnings: pd.DatetimeIndex | None = None,
+                   horizon: int | None = None) -> pd.DataFrame:
+    """Add indicator, calendar and earnings columns plus the target label.
+
+    bigmove task: target = 1 if |return over `horizon` bars| is unusually large.
     All price-scale features are normalized so they generalize across tickers.
     """
     horizon = horizon or CONFIG.horizon
@@ -85,6 +107,11 @@ def build_features(df: pd.DataFrame, horizon: int | None = None) -> pd.DataFrame
     out["dow_cos"] = np.cos(2 * np.pi * dow / 5.0)
     out["month_sin"] = np.sin(2 * np.pi * month / 12.0)
     out["month_cos"] = np.cos(2 * np.pi * month / 12.0)
+
+    # Earnings are the single biggest cause of big moves.
+    days = _days_to_earnings(df.index, earnings)
+    out["earn_soon"] = ((days >= 1) & (days <= horizon)).astype("float32")
+    out["earn_days"] = np.minimum(days, 21) / 21.0
 
     fwd_ret = close.shift(-horizon) / close - 1.0
     if CONFIG.task == "bigmove":

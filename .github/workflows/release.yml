@@ -31,7 +31,7 @@ jobs:
       # The install step copies the Qt DLLs (windeployqt), data files and the analyzer.
       - name: Package
         run: |
-          cmake --install build --config Release --prefix VolatilityRadar
+          cmake --install build --config Release --prefix "${{ github.workspace }}/VolatilityRadar"
           Compress-Archive -Path VolatilityRadar -DestinationPath VolatilityRadar-${{ github.ref_name }}-windows-x64.zip
 
       - uses: softprops/action-gh-release@v2
